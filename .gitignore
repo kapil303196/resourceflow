@@ -1,0 +1,27 @@
+node_modules/
+.next/
+out/
+build/
+
+# Local tool artifacts (Claude Code, Flow, code-review-graph, swarm)
+.claude/
+.claude-flow/
+.swarm/
+.code-review-graph/
+.mcp.json
+
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.DS_Store
+*.pem
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+.idea/
+.vscode/
+coverage/
