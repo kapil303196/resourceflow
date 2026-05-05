@@ -15,6 +15,11 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().optional(),
+  // Amazon SES (preferred when configured)
+  AWS_SES_ACCESS_KEY: z.string().optional(),
+  AWS_SES_SECRET_KEY: z.string().optional(),
+  AWS_SES_REGION: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
   AUTH_RATE_LIMIT_MAX: z.string().default("5"),
 });
 
