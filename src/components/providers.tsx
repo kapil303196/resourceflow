@@ -8,6 +8,7 @@ import { Toaster } from "sonner";
 import superjson from "superjson";
 import { useState, type ReactNode } from "react";
 import { trpc } from "@/lib/trpc";
+import { I18nProvider } from "@/components/i18n-provider";
 
 function getBaseUrl() {
   if (typeof window !== "undefined") return "";
@@ -43,12 +44,14 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-        <trpc.Provider client={trpcClient} queryClient={queryClient}>
-          <QueryClientProvider client={queryClient}>
-            {children}
-            <Toaster position="top-right" richColors closeButton />
-          </QueryClientProvider>
-        </trpc.Provider>
+        <I18nProvider>
+          <trpc.Provider client={trpcClient} queryClient={queryClient}>
+            <QueryClientProvider client={queryClient}>
+              {children}
+              <Toaster position="top-center" richColors closeButton />
+            </QueryClientProvider>
+          </trpc.Provider>
+        </I18nProvider>
       </ThemeProvider>
     </SessionProvider>
   );

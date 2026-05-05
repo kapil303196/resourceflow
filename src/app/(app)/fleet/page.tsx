@@ -1,34 +1,229 @@
 "use client";
-import { trpc } from "@/lib/trpc";
-import { PageHeader } from "@/components/page-header";
-import { DataTable } from "@/components/data-table";
-import { StatusBadge } from "@/components/status-badge";
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { z } from "zod";
+import { toast } from "sonner";
 import { format } from "date-fns";
+import { Truck, AlertTriangle } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { ResourceList } from "@/components/resource-list";
+import { ResourceForm, type FieldDef } from "@/components/resource-form";
+import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/status-badge";
+import { useI18n } from "@/components/i18n-provider";
+
+const TYPES = [
+  { value: "TRUCK", label: "Truck" },
+  { value: "TRACTOR", label: "Tractor" },
+  { value: "MINI_TRUCK", label: "Mini truck" },
+  { value: "DUMPER", label: "Dumper" },
+  { value: "OTHER", label: "Other" },
+];
+const OWNERSHIP = [
+  { value: "OWNED", label: "Owned" },
+  { value: "LEASED", label: "Leased" },
+  { value: "CONTRACTED_TRIP", label: "Contracted (per trip)" },
+  { value: "CONTRACTED_DAILY", label: "Contracted (daily)" },
+  { value: "CONTRACTED_MONTHLY", label: "Contracted (monthly)" },
+];
+
+const schema = z.object({
+  registrationNumber: z.string().min(1),
+  vehicleType: z.enum(["TRUCK", "TRACTOR", "MINI_TRUCK", "DUMPER", "OTHER"]),
+  capacityTons: z.coerce.number().min(0).default(0),
+  make: z.string().optional(),
+  model: z.string().optional(),
+  year: z.coerce.number().optional(),
+  ownershipType: z.enum(["OWNED", "LEASED", "CONTRACTED_DAILY", "CONTRACTED_TRIP", "CONTRACTED_MONTHLY"]),
+  contractorId: z.string().optional(),
+  ratePerTrip: z.coerce.number().min(0).default(0),
+  ratePerTon: z.coerce.number().min(0).default(0),
+  insuranceExpiryDate: z.string().optional(),
+  fitnessExpiryDate: z.string().optional(),
+  permitExpiryDate: z.string().optional(),
+  pucExpiryDate: z.string().optional(),
+  isActive: z.boolean().default(true),
+  notes: z.string().optional(),
+});
+
+type FormValues = z.infer<typeof schema>;
+
+const defaults: FormValues = {
+  registrationNumber: "",
+  vehicleType: "TRUCK",
+  capacityTons: 0,
+  make: "",
+  model: "",
+  year: undefined as any,
+  ownershipType: "OWNED",
+  contractorId: "",
+  ratePerTrip: 0,
+  ratePerTon: 0,
+  insuranceExpiryDate: "",
+  fitnessExpiryDate: "",
+  permitExpiryDate: "",
+  pucExpiryDate: "",
+  isActive: true,
+  notes: "",
+};
+
+function expiringSoon(date?: string | Date) {
+  if (!date) return false;
+  const d = new Date(date);
+  const days = (d.getTime() - Date.now()) / 86_400_000;
+  return days >= 0 && days <= 30;
+}
 
 export default function FleetPage() {
-  const list = trpc.vehicle.list.useQuery({});
+  const { t } = useI18n();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<string>("all");
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
+
+  const list = trpc.vehicle.list.useQuery({
+    search,
+    extra: filter !== "all" ? { ownershipType: filter } : {},
+  } as any);
+  const contractors = trpc.contractor.list.useQuery({});
+  const utils = trpc.useUtils();
+  const create = trpc.vehicle.create.useMutation({
+    onSuccess: () => { toast.success("Vehicle added"); utils.vehicle.list.invalidate(); setOpen(false); },
+    onError: (e) => toast.error(e.message),
+  });
+  const update = trpc.vehicle.update.useMutation({
+    onSuccess: () => { toast.success("Saved"); utils.vehicle.list.invalidate(); setOpen(false); setEditing(null); },
+    onError: (e) => toast.error(e.message),
+  });
+  const del = trpc.vehicle.delete.useMutation({
+    onSuccess: () => { toast.success("Removed"); utils.vehicle.list.invalidate(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const fields: FieldDef[] = [
+    { name: "registrationNumber", label: "Registration #", type: "text", required: true, placeholder: "GJ-01-AA-1001", span: 2 },
+    { name: "vehicleType", label: "Type", type: "select", options: TYPES, required: true },
+    { name: "capacityTons", label: "Capacity (tons)", type: "number", step: 0.5 },
+    { name: "make", label: "Make", type: "text" },
+    { name: "model", label: "Model", type: "text" },
+    { name: "year", label: "Year", type: "number" },
+    { name: "ownershipType", label: "Ownership", type: "select", options: OWNERSHIP, required: true },
+    {
+      name: "contractorId",
+      label: "Contractor",
+      type: "select",
+      options: [
+        { value: "", label: "— None —" },
+        ...((contractors.data?.items ?? []).map((c: any) => ({ value: c._id, label: c.name }))),
+      ],
+      showIf: (v) => v.ownershipType?.startsWith("CONTRACTED"),
+      span: 2,
+    },
+    { name: "ratePerTrip", label: "Rate / trip (major)", type: "money", showIf: (v) => v.ownershipType === "CONTRACTED_TRIP" },
+    { name: "ratePerTon", label: "Rate / ton (major)", type: "money", showIf: (v) => v.ownershipType?.startsWith("CONTRACTED") },
+    { name: "insuranceExpiryDate", label: "Insurance expiry", type: "date" },
+    { name: "fitnessExpiryDate", label: "Fitness expiry", type: "date" },
+    { name: "permitExpiryDate", label: "Permit expiry", type: "date" },
+    { name: "pucExpiryDate", label: "PUC expiry", type: "date" },
+    { name: "notes", label: "Notes", type: "textarea", span: 2 },
+    { name: "isActive", label: "Active", type: "boolean" },
+  ];
+
+  async function submit(v: FormValues) {
+    const payload: any = { ...v };
+    // money to minor
+    payload.ratePerTrip = Math.round((v.ratePerTrip ?? 0) * 100);
+    payload.ratePerTon = Math.round((v.ratePerTon ?? 0) * 100);
+    for (const k of ["insuranceExpiryDate", "fitnessExpiryDate", "permitExpiryDate", "pucExpiryDate"] as const) {
+      if (v[k]) payload[k] = new Date(v[k]!);
+      else delete payload[k];
+    }
+    if (!payload.contractorId) delete payload.contractorId;
+    if (editing) await update.mutateAsync({ id: editing._id, ...payload });
+    else await create.mutateAsync(payload);
+  }
+
   return (
-    <div className="p-6">
-      <PageHeader title="Fleet" description="Vehicles, ownership and document expiry" />
-      <DataTable
+    <>
+      <ResourceList
+        title={t("fleet")}
+        itemName="vehicle"
         data={list.data?.items ?? []}
         loading={list.isLoading}
+        search={search}
+        onSearchChange={setSearch}
+        filters={[
+          { label: "All", value: "all", active: filter === "all" },
+          { label: "Owned", value: "OWNED", active: filter === "OWNED" },
+          { label: "Per trip", value: "CONTRACTED_TRIP", active: filter === "CONTRACTED_TRIP" },
+          { label: "Daily", value: "CONTRACTED_DAILY", active: filter === "CONTRACTED_DAILY" },
+        ]}
+        onFilterChange={setFilter}
+        onCreate={() => { setEditing(null); setOpen(true); }}
+        onEdit={(row) => { setEditing(row); setOpen(true); }}
+        onDelete={async (row) => del.mutateAsync({ id: String(row._id) })}
         columns={[
-          { key: "registrationNumber", header: "Reg #" },
-          { key: "vehicleType", header: "Type", cell: (v: any) => <Badge variant="outline">{v.vehicleType}</Badge> },
-          { key: "ownershipType", header: "Ownership" },
-          { key: "contractorId", header: "Contractor", cell: (v: any) => v.contractorId?.name ?? "—" },
-          { key: "capacityTons", header: "Capacity" },
-          { key: "currentStatus", header: "Status", cell: (v: any) => <StatusBadge status={v.currentStatus} /> },
+          { key: "registrationNumber", header: "Reg #", cell: (v: any) => <span className="font-mono font-medium">{v.registrationNumber}</span> },
+          { key: "vehicleType", header: t("type"), cell: (v: any) => <Badge variant="outline">{TYPES.find((x) => x.value === v.vehicleType)?.label ?? v.vehicleType}</Badge> },
+          { key: "ownershipType", header: "Ownership", cell: (v: any) => OWNERSHIP.find((x) => x.value === v.ownershipType)?.label ?? v.ownershipType },
+          { key: "capacityTons", header: "Capacity", cell: (v: any) => `${v.capacityTons}t` },
+          { key: "currentStatus", header: t("status"), cell: (v: any) => <StatusBadge status={v.currentStatus} /> },
           {
-            key: "insuranceExpiryDate",
-            header: "Insurance",
-            cell: (v: any) =>
-              v.insuranceExpiryDate ? format(new Date(v.insuranceExpiryDate), "PP") : "—",
+            key: "expiry", header: "Doc expiry",
+            cell: (v: any) => {
+              const soon = ["insuranceExpiryDate", "fitnessExpiryDate", "permitExpiryDate", "pucExpiryDate"]
+                .some((k) => expiringSoon(v[k]));
+              return soon ? <Badge variant="warning"><AlertTriangle className="size-3 mr-1" />Expiring</Badge> : "—";
+            },
           },
         ]}
+        mobileCard={(v: any) => {
+          const docSoon = ["insuranceExpiryDate", "fitnessExpiryDate", "permitExpiryDate", "pucExpiryDate"]
+            .some((k) => expiringSoon(v[k]));
+          return (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Truck className="size-4 text-muted-foreground shrink-0" />
+                  <span className="font-mono font-semibold truncate">{v.registrationNumber}</span>
+                </div>
+                <StatusBadge status={v.currentStatus} />
+              </div>
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                <span>{TYPES.find((x) => x.value === v.vehicleType)?.label}</span>
+                <span>·</span>
+                <span>{OWNERSHIP.find((x) => x.value === v.ownershipType)?.label}</span>
+                <span>·</span>
+                <span>{v.capacityTons}t</span>
+              </div>
+              {docSoon && (
+                <Badge variant="warning" className="mt-1.5">
+                  <AlertTriangle className="size-3 mr-1" />
+                  Document expiring soon
+                </Badge>
+              )}
+            </div>
+          );
+        }}
       />
-    </div>
+      <ResourceForm
+        open={open}
+        onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}
+        title={editing ? "Edit vehicle" : "Add vehicle"}
+        schema={schema}
+        defaultValues={editing ? {
+          ...defaults, ...editing,
+          ratePerTrip: (editing.ratePerTrip ?? 0) / 100,
+          ratePerTon: (editing.ratePerTon ?? 0) / 100,
+          insuranceExpiryDate: editing.insuranceExpiryDate ? format(new Date(editing.insuranceExpiryDate), "yyyy-MM-dd") : "",
+          fitnessExpiryDate: editing.fitnessExpiryDate ? format(new Date(editing.fitnessExpiryDate), "yyyy-MM-dd") : "",
+          permitExpiryDate: editing.permitExpiryDate ? format(new Date(editing.permitExpiryDate), "yyyy-MM-dd") : "",
+          pucExpiryDate: editing.pucExpiryDate ? format(new Date(editing.pucExpiryDate), "yyyy-MM-dd") : "",
+          contractorId: editing.contractorId?._id ?? editing.contractorId ?? "",
+        } : defaults}
+        fields={fields}
+        submitting={create.isPending || update.isPending}
+        onSubmit={submit}
+      />
+    </>
   );
 }
