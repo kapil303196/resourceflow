@@ -73,10 +73,12 @@ export function applyBasePlugin(schema: Schema) {
     }
   });
 
-  // Stamp tenantId + createdBy on save / insert
-  schema.pre("save", function (next) {
+  // Stamp tenantId + createdBy BEFORE validation so the required check passes.
+  // Mongoose runs pre("validate") then pre("save") — required-field validation
+  // happens during the validate phase, so we must populate tenantId here.
+  schema.pre("validate", function (next) {
     const ctx = tenantContext.get();
-    if (ctx && !this.tenantId) (this as any).tenantId = ctx.tenantId;
+    if (ctx && !(this as any).tenantId) (this as any).tenantId = ctx.tenantId;
     if (ctx && this.isNew && !(this as any).createdBy) (this as any).createdBy = ctx.userId;
     if (ctx) (this as any).updatedBy = ctx.userId;
     next();
