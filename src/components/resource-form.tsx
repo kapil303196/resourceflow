@@ -170,26 +170,39 @@ function renderControl(f: FieldDef, form: any) {
           />
         </div>
       );
-    case "select":
+    case "select": {
+      // Radix Select disallows empty-string values. Map the empty-option
+      // sentinel to NONE_SENTINEL when handing values to Radix, and back
+      // to "" when storing in form state.
+      const NONE = "__none__";
+      const radixValue = val === "" || val == null ? NONE : String(val);
       return (
         <Select
-          value={val ?? ""}
+          value={radixValue}
           onValueChange={(v) =>
-            form.setValue(f.name as Path<any>, v as any, { shouldDirty: true })
+            form.setValue(
+              f.name as Path<any>,
+              (v === NONE ? "" : v) as any,
+              { shouldDirty: true },
+            )
           }
         >
           <SelectTrigger id={f.name}>
             <SelectValue placeholder={f.placeholder ?? "Select…"} />
           </SelectTrigger>
           <SelectContent>
-            {(f.options ?? []).map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
+            {(f.options ?? []).map((o) => {
+              const value = o.value === "" ? NONE : o.value;
+              return (
+                <SelectItem key={value} value={value}>
+                  {o.label}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       );
+    }
     case "date":
       return <Input id={f.name} type="date" {...reg()} />;
     case "color":
