@@ -50,15 +50,15 @@ export default function LicensesPage() {
   const locations = trpc.location.list.useQuery({});
   const utils = trpc.useUtils();
   const create = trpc.license.create.useMutation({
-    onSuccess: () => { toast.success("License added"); utils.license.list.invalidate(); setOpen(false); },
+    onSuccess: () => { toast.success(t("toastAdded")); utils.license.list.invalidate(); setOpen(false); },
     onError: (e) => toast.error(e.message),
   });
   const update = trpc.license.update.useMutation({
-    onSuccess: () => { toast.success("Saved"); utils.license.list.invalidate(); setOpen(false); setEditing(null); },
+    onSuccess: () => { toast.success(t("toastSaved")); utils.license.list.invalidate(); setOpen(false); setEditing(null); },
     onError: (e) => toast.error(e.message),
   });
   const del = trpc.license.delete.useMutation({
-    onSuccess: () => { toast.success("Removed"); utils.license.list.invalidate(); },
+    onSuccess: () => { toast.success(t("toastRemoved")); utils.license.list.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
 
@@ -110,7 +110,7 @@ export default function LicensesPage() {
     <>
       <ResourceList
         title={t("licenses")}
-        itemName="license"
+        itemName={t("license")}
         data={filtered}
         loading={list.isLoading}
         filters={[

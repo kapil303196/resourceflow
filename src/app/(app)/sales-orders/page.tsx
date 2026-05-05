@@ -42,11 +42,11 @@ export default function SalesOrdersPage() {
   const grades = trpc.materialGrade.list.useQuery({});
   const utils = trpc.useUtils();
   const create = trpc.salesOrder.create.useMutation({
-    onSuccess: () => { toast.success("Order created"); utils.salesOrder.list.invalidate(); setOpen(false); },
+    onSuccess: () => { toast.success(t("toastOrderCreated")); utils.salesOrder.list.invalidate(); setOpen(false); },
     onError: (e) => toast.error(e.message),
   });
   const setStatus = trpc.salesOrder.setStatus.useMutation({
-    onSuccess: () => { toast.success("Updated"); utils.salesOrder.list.invalidate(); },
+    onSuccess: () => { toast.success(t("toastUpdated")); utils.salesOrder.list.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
 
@@ -71,7 +71,7 @@ export default function SalesOrdersPage() {
     <>
       <ResourceList
         title={t("salesOrders")}
-        itemName="order"
+        itemName={t("order")}
         data={list.data ?? []}
         loading={list.isLoading}
         filters={[

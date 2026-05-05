@@ -163,7 +163,7 @@ export function SidebarNav({
 
 export function DesktopSidebar({ permissions }: { permissions: string[] }) {
   return (
-    <aside className="hidden md:flex md:flex-col md:w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-muted/40 shrink-0">
+    <aside className="hidden md:flex md:flex-col md:w-64 h-full bg-sidebar text-sidebar-foreground border-r border-sidebar-muted/40 shrink-0">
       <div className="px-5 py-5 flex items-center gap-2.5 border-b border-sidebar-muted/40">
         <div className="size-9 rounded-xl bg-gradient-to-br from-primary to-success grid place-items-center shadow-lg">
           <Boxes className="size-5 text-white" strokeWidth={2.5} />

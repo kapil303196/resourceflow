@@ -78,15 +78,15 @@ export default function ContractorsPage() {
   } as any);
   const utils = trpc.useUtils();
   const create = trpc.contractor.create.useMutation({
-    onSuccess: () => { toast.success("Added"); utils.contractor.list.invalidate(); setOpen(false); },
+    onSuccess: () => { toast.success(t("toastAdded")); utils.contractor.list.invalidate(); setOpen(false); },
     onError: (e) => toast.error(e.message),
   });
   const update = trpc.contractor.update.useMutation({
-    onSuccess: () => { toast.success("Saved"); utils.contractor.list.invalidate(); setOpen(false); setEditing(null); },
+    onSuccess: () => { toast.success(t("toastSaved")); utils.contractor.list.invalidate(); setOpen(false); setEditing(null); },
     onError: (e) => toast.error(e.message),
   });
   const del = trpc.contractor.delete.useMutation({
-    onSuccess: () => { toast.success("Removed"); utils.contractor.list.invalidate(); },
+    onSuccess: () => { toast.success(t("toastRemoved")); utils.contractor.list.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
 
@@ -104,13 +104,13 @@ export default function ContractorsPage() {
     <>
       <ResourceList
         title={t("contractors")}
-        itemName="contractor"
+        itemName={t("contractor")}
         data={list.data?.items ?? []}
         loading={list.isLoading}
         search={search}
         onSearchChange={setSearch}
         filters={[
-          { label: "All", value: "all", active: filter === "all" },
+          { label: t("filterAll"), value: "all", active: filter === "all" },
           ...TYPES.map((tp) => ({ label: tp.label, value: tp.value, active: filter === tp.value })),
         ]}
         onFilterChange={setFilter}
@@ -141,7 +141,7 @@ export default function ContractorsPage() {
       <ResourceForm
         open={open}
         onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}
-        title={editing ? "Edit contractor" : "Add contractor"}
+        title={editing ? t("editContractorTitle") : t("addContractorTitle")}
         schema={schema}
         defaultValues={editing ? { ...defaults, ...editing,
           agreementStartDate: editing.agreementStartDate ? format(new Date(editing.agreementStartDate), "yyyy-MM-dd") : "",

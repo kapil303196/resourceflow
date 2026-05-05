@@ -68,15 +68,15 @@ function SuppliersInline() {
   const list = trpc.supplier.list.useQuery({ search });
   const utils = trpc.useUtils();
   const create = trpc.supplier.create.useMutation({
-    onSuccess: () => { toast.success("Added"); utils.supplier.list.invalidate(); setOpen(false); },
+    onSuccess: () => { toast.success(t("toastAdded")); utils.supplier.list.invalidate(); setOpen(false); },
     onError: (e) => toast.error(e.message),
   });
   const update = trpc.supplier.update.useMutation({
-    onSuccess: () => { toast.success("Saved"); utils.supplier.list.invalidate(); setOpen(false); setEditing(null); },
+    onSuccess: () => { toast.success(t("toastSaved")); utils.supplier.list.invalidate(); setOpen(false); setEditing(null); },
     onError: (e) => toast.error(e.message),
   });
   const del = trpc.supplier.delete.useMutation({
-    onSuccess: () => { toast.success("Removed"); utils.supplier.list.invalidate(); },
+    onSuccess: () => { toast.success(t("toastRemoved")); utils.supplier.list.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
   return (
@@ -172,7 +172,7 @@ function PurchaseOrdersInline() {
   const grades = trpc.materialGrade.list.useQuery({});
   const utils = trpc.useUtils();
   const create = trpc.purchaseOrder.create.useMutation({
-    onSuccess: () => { toast.success("PO created"); utils.purchaseOrder.list.invalidate(); setOpen(false); },
+    onSuccess: () => { toast.success(t("toastPOCreated")); utils.purchaseOrder.list.invalidate(); setOpen(false); },
     onError: (e) => toast.error(e.message),
   });
 

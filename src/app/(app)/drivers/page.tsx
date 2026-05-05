@@ -88,15 +88,15 @@ export default function DriversPage() {
   const utils = trpc.useUtils();
 
   const create = trpc.driver.create.useMutation({
-    onSuccess: () => { toast.success("Driver added"); utils.driver.list.invalidate(); setOpen(false); },
+    onSuccess: () => { toast.success(t("toastAdded")); utils.driver.list.invalidate(); setOpen(false); },
     onError: (e) => toast.error(e.message),
   });
   const update = trpc.driver.update.useMutation({
-    onSuccess: () => { toast.success("Saved"); utils.driver.list.invalidate(); setOpen(false); setEditing(null); },
+    onSuccess: () => { toast.success(t("toastSaved")); utils.driver.list.invalidate(); setOpen(false); setEditing(null); },
     onError: (e) => toast.error(e.message),
   });
   const del = trpc.driver.delete.useMutation({
-    onSuccess: () => { toast.success("Removed"); utils.driver.list.invalidate(); },
+    onSuccess: () => { toast.success(t("toastRemoved")); utils.driver.list.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
 
@@ -155,13 +155,13 @@ export default function DriversPage() {
     <>
       <ResourceList
         title={t("drivers")}
-        itemName="driver"
+        itemName={t("driver")}
         data={list.data?.items ?? []}
         loading={list.isLoading}
         search={search}
         onSearchChange={setSearch}
         filters={[
-          { label: "All", value: "all", active: filter === "all" },
+          { label: t("filterAll"), value: "all", active: filter === "all" },
           ...EMP.map((e) => ({ label: e.label, value: e.value, active: filter === e.value })),
         ]}
         onFilterChange={setFilter}
@@ -201,7 +201,7 @@ export default function DriversPage() {
       <ResourceForm
         open={open}
         onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}
-        title={editing ? "Edit driver" : "Add driver"}
+        title={editing ? t("editDriverTitle") : t("addDriverTitle")}
         schema={schema}
         defaultValues={editing ? {
           ...defaults, ...editing,

@@ -39,11 +39,11 @@ export default function ExtractionPage() {
   const vehicles = trpc.vehicle.list.useQuery({});
   const utils = trpc.useUtils();
   const create = trpc.extraction.create.useMutation({
-    onSuccess: () => { toast.success("Extraction recorded"); utils.extraction.list.invalidate(); setOpen(false); },
+    onSuccess: () => { toast.success(t("toastExtractionRecorded")); utils.extraction.list.invalidate(); setOpen(false); },
     onError: (e) => toast.error(e.message),
   });
   const cancel = trpc.extraction.cancel.useMutation({
-    onSuccess: () => { toast.success("Cancelled"); utils.extraction.list.invalidate(); },
+    onSuccess: () => { toast.success(t("toastUpdated")); utils.extraction.list.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
 
@@ -75,7 +75,7 @@ export default function ExtractionPage() {
     <>
       <ResourceList
         title={t("extraction")}
-        itemName="extraction"
+        itemName={t("extraction")}
         data={list.data?.items ?? []}
         loading={list.isLoading}
         filters={[

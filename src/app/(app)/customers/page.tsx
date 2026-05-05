@@ -61,7 +61,7 @@ export default function CustomersPage() {
   const utils = trpc.useUtils();
   const create = trpc.customer.create.useMutation({
     onSuccess: () => {
-      toast.success("Customer added");
+      toast.success(t("toastAdded"));
       utils.customer.list.invalidate();
       setOpen(false);
     },
@@ -69,7 +69,7 @@ export default function CustomersPage() {
   });
   const update = trpc.customer.update.useMutation({
     onSuccess: () => {
-      toast.success("Saved");
+      toast.success(t("toastSaved"));
       utils.customer.list.invalidate();
       setOpen(false);
       setEditing(null);
@@ -78,7 +78,7 @@ export default function CustomersPage() {
   });
   const del = trpc.customer.delete.useMutation({
     onSuccess: () => {
-      toast.success("Customer removed");
+      toast.success(t("toastRemoved"));
       utils.customer.list.invalidate();
     },
     onError: (e) => toast.error(e.message),
@@ -107,7 +107,7 @@ export default function CustomersPage() {
     <>
       <ResourceList
         title={t("customers")}
-        itemName="customer"
+        itemName={t("customer")}
         data={list.data?.items ?? []}
         loading={list.isLoading}
         search={search}
@@ -171,7 +171,7 @@ export default function CustomersPage() {
           setOpen(o);
           if (!o) setEditing(null);
         }}
-        title={editing ? "Edit customer" : "Add customer"}
+        title={editing ? t("editCustomerTitle") : t("addCustomerTitle")}
         schema={schema}
         defaultValues={
           editing

@@ -37,15 +37,15 @@ export default function InvoicesPage() {
   const utils = trpc.useUtils();
 
   const createInv = trpc.invoice.createFromOrder.useMutation({
-    onSuccess: () => { toast.success("Invoice created"); utils.invoice.list.invalidate(); setCreateOpen(false); },
+    onSuccess: () => { toast.success(t("toastInvoiceCreated")); utils.invoice.list.invalidate(); setCreateOpen(false); },
     onError: (e) => toast.error(e.message),
   });
   const recordPayment = trpc.invoice.recordPayment.useMutation({
-    onSuccess: () => { toast.success("Payment recorded"); utils.invoice.list.invalidate(); setPaymentFor(null); },
+    onSuccess: () => { toast.success(t("toastPaymentRecorded")); utils.invoice.list.invalidate(); setPaymentFor(null); },
     onError: (e) => toast.error(e.message),
   });
   const send = trpc.invoice.send.useMutation({
-    onSuccess: () => { toast.success("Marked as sent"); utils.invoice.list.invalidate(); },
+    onSuccess: () => { toast.success(t("toastUpdated")); utils.invoice.list.invalidate(); },
   });
 
   const downloadPdf = async (id: string) => {
@@ -64,7 +64,7 @@ export default function InvoicesPage() {
     <>
       <ResourceList
         title={t("invoices")}
-        itemName="invoice"
+        itemName={t("invoice")}
         data={list.data ?? []}
         loading={list.isLoading}
         filters={[

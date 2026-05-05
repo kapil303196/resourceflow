@@ -265,6 +265,19 @@ const en = {
   toastOrderCreated: "Order created",
   toastExtractionRecorded: "Extraction recorded",
   toastPOCreated: "Purchase order created",
+
+  addCustomerTitle: "Add customer",
+  editCustomerTitle: "Edit customer",
+  addSupplierTitle: "Add supplier",
+  editSupplierTitle: "Edit supplier",
+  addContractorTitle: "Add contractor",
+  editContractorTitle: "Edit contractor",
+  addVehicleTitle: "Add vehicle",
+  editVehicleTitle: "Edit vehicle",
+  addDriverTitle: "Add driver",
+  editDriverTitle: "Edit driver",
+  addLicenseTitle: "Add license",
+  editLicenseTitle: "Edit license",
 };
 
 type Dict = typeof en;
@@ -519,6 +532,19 @@ const hi: Dict = {
   toastOrderCreated: "आदेश बनाया",
   toastExtractionRecorded: "खनन दर्ज किया",
   toastPOCreated: "खरीद आदेश बनाया",
+
+  addCustomerTitle: "ग्राहक जोड़ें",
+  editCustomerTitle: "ग्राहक संपादित करें",
+  addSupplierTitle: "आपूर्तिकर्ता जोड़ें",
+  editSupplierTitle: "आपूर्तिकर्ता संपादित करें",
+  addContractorTitle: "ठेकेदार जोड़ें",
+  editContractorTitle: "ठेकेदार संपादित करें",
+  addVehicleTitle: "वाहन जोड़ें",
+  editVehicleTitle: "वाहन संपादित करें",
+  addDriverTitle: "ड्राइवर जोड़ें",
+  editDriverTitle: "ड्राइवर संपादित करें",
+  addLicenseTitle: "लाइसेंस जोड़ें",
+  editLicenseTitle: "लाइसेंस संपादित करें",
 };
 
 const gu: Dict = {
@@ -771,6 +797,19 @@ const gu: Dict = {
   toastOrderCreated: "ઓર્ડર બન્યો",
   toastExtractionRecorded: "ખનન નોંધાયું",
   toastPOCreated: "ખરીદ ઓર્ડર બન્યો",
+
+  addCustomerTitle: "ગ્રાહક ઉમેરો",
+  editCustomerTitle: "ગ્રાહક સંપાદિત કરો",
+  addSupplierTitle: "સપ્લાયર ઉમેરો",
+  editSupplierTitle: "સપ્લાયર સંપાદિત કરો",
+  addContractorTitle: "કોન્ટ્રાક્ટર ઉમેરો",
+  editContractorTitle: "કોન્ટ્રાક્ટર સંપાદિત કરો",
+  addVehicleTitle: "વાહન ઉમેરો",
+  editVehicleTitle: "વાહન સંપાદિત કરો",
+  addDriverTitle: "ડ્રાઇવર ઉમેરો",
+  editDriverTitle: "ડ્રાઇવર સંપાદિત કરો",
+  addLicenseTitle: "લાઇસન્સ ઉમેરો",
+  editLicenseTitle: "લાઇસન્સ સંપાદિત કરો",
 };
 
 export const dictionaries: Record<Locale, Dict> = { en, hi, gu };

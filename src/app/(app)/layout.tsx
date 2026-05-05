@@ -14,9 +14,11 @@ export default async function AppLayout({
   if (!session?.user) redirect("/login");
 
   return (
-    <div className="min-h-dvh flex bg-muted/30">
+    // h-dvh (not min-h) anchors the layout to viewport height, so only the
+    // <main> column scrolls and the sidebar stays pinned.
+    <div className="h-dvh flex bg-muted/30 overflow-hidden">
       <DesktopSidebar permissions={session.user.permissions ?? []} />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-full">
         <Topbar />
         <main className="flex-1 overflow-y-auto pb-24 md:pb-4">{children}</main>
         <BottomNav />

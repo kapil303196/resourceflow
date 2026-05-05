@@ -87,15 +87,15 @@ export default function FleetPage() {
   const contractors = trpc.contractor.list.useQuery({});
   const utils = trpc.useUtils();
   const create = trpc.vehicle.create.useMutation({
-    onSuccess: () => { toast.success("Vehicle added"); utils.vehicle.list.invalidate(); setOpen(false); },
+    onSuccess: () => { toast.success(t("toastAdded")); utils.vehicle.list.invalidate(); setOpen(false); },
     onError: (e) => toast.error(e.message),
   });
   const update = trpc.vehicle.update.useMutation({
-    onSuccess: () => { toast.success("Saved"); utils.vehicle.list.invalidate(); setOpen(false); setEditing(null); },
+    onSuccess: () => { toast.success(t("toastSaved")); utils.vehicle.list.invalidate(); setOpen(false); setEditing(null); },
     onError: (e) => toast.error(e.message),
   });
   const del = trpc.vehicle.delete.useMutation({
-    onSuccess: () => { toast.success("Removed"); utils.vehicle.list.invalidate(); },
+    onSuccess: () => { toast.success(t("toastRemoved")); utils.vehicle.list.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
 
@@ -146,13 +146,13 @@ export default function FleetPage() {
     <>
       <ResourceList
         title={t("fleet")}
-        itemName="vehicle"
+        itemName={t("vehicle")}
         data={list.data?.items ?? []}
         loading={list.isLoading}
         search={search}
         onSearchChange={setSearch}
         filters={[
-          { label: "All", value: "all", active: filter === "all" },
+          { label: t("filterAll"), value: "all", active: filter === "all" },
           { label: "Owned", value: "OWNED", active: filter === "OWNED" },
           { label: "Per trip", value: "CONTRACTED_TRIP", active: filter === "CONTRACTED_TRIP" },
           { label: "Daily", value: "CONTRACTED_DAILY", active: filter === "CONTRACTED_DAILY" },
@@ -208,7 +208,7 @@ export default function FleetPage() {
       <ResourceForm
         open={open}
         onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}
-        title={editing ? "Edit vehicle" : "Add vehicle"}
+        title={editing ? t("editVehicleTitle") : t("addVehicleTitle")}
         schema={schema}
         defaultValues={editing ? {
           ...defaults, ...editing,
