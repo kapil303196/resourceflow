@@ -2,7 +2,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 import type { NextRequest } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession, type Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { connectMongo } from "@/lib/mongo";
 import { tenantContext, TenantContext } from "@/lib/tenant-context";
@@ -12,7 +12,7 @@ export type Ctx = {
   req?: NextRequest;
   ip: string;
   userAgent: string;
-  session: Awaited<ReturnType<typeof getServerSession>>;
+  session: Session | null;
 };
 
 export async function createTRPCContext(opts: { req?: NextRequest }): Promise<Ctx> {

@@ -9,9 +9,6 @@ import { format } from "date-fns";
 export default function DocumentsPage() {
   const list = trpc.document.list.useQuery({});
   const expiring = trpc.document.expiringSoon.useQuery({ days: 30 });
-  const dl = trpc.document.presignedDownloadUrl.useMutation
-    ? null
-    : null;
   return (
     <div className="p-6 space-y-6">
       <PageHeader title="Documents" description="Unified document center across all entities" />
@@ -58,20 +55,24 @@ export default function DocumentsPage() {
 }
 
 function DownloadButton({ id }: { id: string }) {
-  // We use query client to fetch signed URL on demand
-  const utils = (window as any).__resourceflow_trpc_utils;
   return (
     <Button
       variant="outline"
       size="sm"
       onClick={async () => {
-        // Use trpc fetch via utils if available, else navigate to internal endpoint
-        // Simpler: call tRPC by importing the client (lazy)
-        const { default: superjson } = await import("superjson");
-        const res = await fetch(`/api/trpc/document.presignedDownloadUrl?input=${encodeURIComponent(JSON.stringify({ id }))}`);
+        // tRPC HTTP GET with superjson-encoded input
+        const inputEncoded = encodeURIComponent(
+          JSON.stringify({ "0": { json: { id } } }),
+        );
+        const res = await fetch(
+          `/api/trpc/document.presignedDownloadUrl?batch=1&input=${inputEncoded}`,
+        );
         if (!res.ok) return;
         const json = await res.json();
-        const url = json?.result?.data?.json?.url ?? json?.result?.data?.url;
+        const url =
+          json?.[0]?.result?.data?.json?.url ??
+          json?.result?.data?.json?.url ??
+          json?.[0]?.result?.data?.url;
         if (url) window.open(url, "_blank");
       }}
     >
