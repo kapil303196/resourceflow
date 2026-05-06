@@ -1,5 +1,5 @@
 import nodemailer, { Transporter } from "nodemailer";
-import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import { SESClient, SendEmailCommand, SendRawEmailCommand } from "@aws-sdk/client-ses";
 import { env } from "./env";
 
 let _smtp: Transporter | null = null;
@@ -38,49 +38,158 @@ function fromAddress(): string {
 }
 
 /**
+ * Build a "DisplayName <verified@example.com>" From header. SES requires
+ * the email-address part to be a verified sender — only the display name
+ * varies per tenant.
+ */
+export function buildSender(displayName?: string): string {
+  const verified = fromAddress();
+  if (!displayName) return verified;
+  // Extract bare email if the verified value already has a display name
+  const m = verified.match(/<([^>]+)>/);
+  const bare = m ? m[1] : verified;
+  // Sanitise display name (no quotes that would break the header)
+  const safeName = displayName.replace(/[\\"<>]/g, "");
+  return `"${safeName}" <${bare}>`;
+}
+
+/**
+ * Construct a multipart MIME message for SES SendRawEmail.
+ * Supports text + html alternative parts and arbitrary attachments.
+ */
+function buildRawMime(opts: {
+  from: string;
+  to: string[];
+  cc?: string[];
+  replyTo?: string;
+  subject: string;
+  text: string;
+  html: string;
+  attachments: { filename: string; content: Buffer; contentType: string }[];
+}): Buffer {
+  const mixed = `mixed_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+  const alt = `alt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+  const lines: string[] = [];
+
+  lines.push(`From: ${opts.from}`);
+  lines.push(`To: ${opts.to.join(", ")}`);
+  if (opts.cc?.length) lines.push(`Cc: ${opts.cc.join(", ")}`);
+  if (opts.replyTo) lines.push(`Reply-To: ${opts.replyTo}`);
+  lines.push(`Subject: ${opts.subject}`);
+  lines.push("MIME-Version: 1.0");
+  lines.push(`Content-Type: multipart/mixed; boundary="${mixed}"`);
+  lines.push("");
+
+  // alternative part (text + html)
+  lines.push(`--${mixed}`);
+  lines.push(`Content-Type: multipart/alternative; boundary="${alt}"`);
+  lines.push("");
+
+  lines.push(`--${alt}`);
+  lines.push("Content-Type: text/plain; charset=UTF-8");
+  lines.push("Content-Transfer-Encoding: 7bit");
+  lines.push("");
+  lines.push(opts.text);
+  lines.push("");
+
+  lines.push(`--${alt}`);
+  lines.push("Content-Type: text/html; charset=UTF-8");
+  lines.push("Content-Transfer-Encoding: 7bit");
+  lines.push("");
+  lines.push(opts.html);
+  lines.push("");
+
+  lines.push(`--${alt}--`);
+  lines.push("");
+
+  for (const att of opts.attachments) {
+    const b64 = att.content.toString("base64").match(/.{1,76}/g)?.join("\r\n") ?? "";
+    const safeName = att.filename.replace(/[\\"]/g, "");
+    lines.push(`--${mixed}`);
+    lines.push(`Content-Type: ${att.contentType}; name="${safeName}"`);
+    lines.push("Content-Transfer-Encoding: base64");
+    lines.push(`Content-Disposition: attachment; filename="${safeName}"`);
+    lines.push("");
+    lines.push(b64);
+    lines.push("");
+  }
+
+  lines.push(`--${mixed}--`);
+  lines.push("");
+  return Buffer.from(lines.join("\r\n"), "utf-8");
+}
+
+/**
  * Sends transactional email. Prefers Amazon SES when configured;
  * falls back to SMTP/Nodemailer; otherwise no-ops with a warning so
  * dev environments without SMTP/SES configured still work.
  */
 export async function sendEmail(opts: {
   to: string | string[];
+  cc?: string[];
+  replyTo?: string;
   subject: string;
   html: string;
   text?: string;
   attachments?: { filename: string; content: Buffer; contentType: string }[];
+  /** Override the default From — usually `buildSender(tenant.name)`. */
+  from?: string;
 }) {
   const text = opts.text ?? opts.html.replace(/<[^>]+>/g, "");
   const toList = Array.isArray(opts.to) ? opts.to : [opts.to];
+  const from = opts.from ?? fromAddress();
 
   const ses = sesClient();
-  if (ses && (!opts.attachments || opts.attachments.length === 0)) {
-    // Plain SES SendEmail (no attachments). For attachments, fall through to SMTP.
-    const cmd = new SendEmailCommand({
-      Source: fromAddress(),
-      Destination: { ToAddresses: toList },
-      Message: {
-        Subject: { Data: opts.subject, Charset: "UTF-8" },
-        Body: {
-          Html: { Data: opts.html, Charset: "UTF-8" },
-          Text: { Data: text, Charset: "UTF-8" },
-        },
-      },
-    });
+  const hasAttachments = !!opts.attachments?.length;
+
+  if (ses) {
     try {
-      const out = await ses.send(cmd);
+      if (hasAttachments) {
+        // Use SendRawEmail for attachments
+        const raw = buildRawMime({
+          from,
+          to: toList,
+          cc: opts.cc,
+          replyTo: opts.replyTo,
+          subject: opts.subject,
+          text,
+          html: opts.html,
+          attachments: opts.attachments!,
+        });
+        const out = await ses.send(
+          new SendRawEmailCommand({ RawMessage: { Data: raw } }),
+        );
+        return { skipped: false as const, backend: "ses-raw" as const, messageId: out.MessageId };
+      }
+      const out = await ses.send(
+        new SendEmailCommand({
+          Source: from,
+          Destination: { ToAddresses: toList, CcAddresses: opts.cc },
+          ReplyToAddresses: opts.replyTo ? [opts.replyTo] : undefined,
+          Message: {
+            Subject: { Data: opts.subject, Charset: "UTF-8" },
+            Body: {
+              Html: { Data: opts.html, Charset: "UTF-8" },
+              Text: { Data: text, Charset: "UTF-8" },
+            },
+          },
+        }),
+      );
       return { skipped: false as const, backend: "ses" as const, messageId: out.MessageId };
     } catch (e: any) {
       // eslint-disable-next-line no-console
       console.error("[email] SES send failed:", e?.message);
-      // Fall through to SMTP if available
+      // Fall through to SMTP
     }
   }
 
   const t = smtpTransporter();
   if (t) {
     const info = await t.sendMail({
-      from: fromAddress(),
+      from,
       to: toList.join(","),
+      cc: opts.cc?.join(","),
+      replyTo: opts.replyTo,
       subject: opts.subject,
       text,
       html: opts.html,

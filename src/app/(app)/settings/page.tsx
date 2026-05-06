@@ -73,6 +73,7 @@ function TenantTab() {
     },
     onError: (e) => toast.error(e.message),
   });
+  const settings = ((tenant.data as any)?.settings ?? {}) as Record<string, any>;
   const f = useForm({
     values: tenant.data
       ? {
@@ -82,30 +83,144 @@ function TenantTab() {
           unitOfMeasure: (tenant.data as any).unitOfMeasure ?? "",
           currency: (tenant.data as any).currency ?? "",
           timezone: (tenant.data as any).timezone ?? "",
+          // Company / GST details (stored in tenant.settings)
+          legalName: settings.legalName ?? "",
+          gstin: settings.gstin ?? "",
+          pan: settings.pan ?? "",
+          address: settings.address ?? "",
+          state: settings.state ?? "",
+          stateCode: settings.stateCode ?? "",
+          email: settings.email ?? "",
+          phone: settings.phone ?? "",
+          taxRate: typeof settings.taxRate === "number" ? settings.taxRate : 0.05,
+          defaultHsn: settings.defaultHsn ?? "2505",
+          // Bank details (for invoice footer)
+          bankName: settings.bankName ?? "",
+          bankAccount: settings.bankAccount ?? "",
+          bankIfsc: settings.bankIfsc ?? "",
+          bankBranch: settings.bankBranch ?? "",
+          upiId: settings.upiId ?? "",
+          invoiceFooterNote: settings.invoiceFooterNote ?? "",
         }
       : undefined,
   });
   return (
-    <Card>
-      <CardContent className="p-5 sm:p-6">
-        <form
-          className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl"
-          onSubmit={f.handleSubmit((v) => update.mutate(v as any))}
-        >
-          <Field label={t("field_companyName")}><Input {...f.register("name")} /></Field>
-          <Field label={t("field_industry")}><Input {...f.register("industryType")} /></Field>
-          <Field label="Material name"><Input {...f.register("materialName")} /></Field>
-          <Field label="Unit"><Input {...f.register("unitOfMeasure")} /></Field>
-          <Field label="Currency"><Input {...f.register("currency")} /></Field>
-          <Field label="Timezone"><Input {...f.register("timezone")} /></Field>
-          <div className="sm:col-span-2 flex justify-end pt-2">
-            <Button type="submit" disabled={update.isPending}>
-              {update.isPending ? t("saving") : t("saveChanges")}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="p-5 sm:p-6">
+          <form
+            className="space-y-6"
+            onSubmit={f.handleSubmit((v: any) =>
+              update.mutate({
+                name: v.name,
+                industryType: v.industryType,
+                materialName: v.materialName,
+                unitOfMeasure: v.unitOfMeasure,
+                currency: v.currency,
+                timezone: v.timezone,
+                settings: {
+                  legalName: v.legalName,
+                  gstin: v.gstin,
+                  pan: v.pan,
+                  address: v.address,
+                  state: v.state,
+                  stateCode: v.stateCode,
+                  email: v.email,
+                  phone: v.phone,
+                  taxRate: Number(v.taxRate ?? 0),
+                  defaultHsn: v.defaultHsn,
+                  bankName: v.bankName,
+                  bankAccount: v.bankAccount,
+                  bankIfsc: v.bankIfsc,
+                  bankBranch: v.bankBranch,
+                  upiId: v.upiId,
+                  invoiceFooterNote: v.invoiceFooterNote,
+                },
+              } as any),
+            )}
+          >
+            {/* Workspace */}
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                Workspace
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label={t("field_companyName")}><Input {...f.register("name")} /></Field>
+                <Field label={t("field_industry")}><Input {...f.register("industryType")} /></Field>
+                <Field label="Material name"><Input {...f.register("materialName")} /></Field>
+                <Field label="Unit"><Input {...f.register("unitOfMeasure")} /></Field>
+                <Field label="Currency"><Input {...f.register("currency")} /></Field>
+                <Field label="Timezone"><Input {...f.register("timezone")} /></Field>
+              </div>
+            </div>
+
+            {/* Company / GST details */}
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                Company details (used on invoices)
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Legal name (printed on invoice)">
+                  <Input placeholder="ABC Sand Mining Pvt. Ltd." {...f.register("legalName")} />
+                </Field>
+                <Field label="GSTIN">
+                  <Input placeholder="24ABCDE1234F1Z5" {...f.register("gstin")} />
+                </Field>
+                <Field label="PAN">
+                  <Input placeholder="ABCDE1234F" {...f.register("pan")} />
+                </Field>
+                <Field label="Default HSN/SAC code">
+                  <Input placeholder="2505 (Sand)" {...f.register("defaultHsn")} />
+                </Field>
+                <div className="sm:col-span-2">
+                  <Field label="Registered address">
+                    <Input placeholder="Plot 12, Industrial Area, Vadodara" {...f.register("address")} />
+                  </Field>
+                </div>
+                <Field label="State">
+                  <Input placeholder="Gujarat" {...f.register("state")} />
+                </Field>
+                <Field label="State code">
+                  <Input placeholder="24" {...f.register("stateCode")} />
+                </Field>
+                <Field label="Contact email (Reply-To)">
+                  <Input type="email" placeholder="billing@company.com" {...f.register("email")} />
+                </Field>
+                <Field label="Phone">
+                  <Input type="tel" placeholder="+91 …" {...f.register("phone")} />
+                </Field>
+                <Field label="Default tax rate (decimal e.g. 0.05 for 5%)">
+                  <Input type="number" step="0.01" {...f.register("taxRate", { valueAsNumber: true })} />
+                </Field>
+              </div>
+            </div>
+
+            {/* Bank details */}
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                Bank details (printed on invoices)
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Bank name"><Input {...f.register("bankName")} /></Field>
+                <Field label="Account number"><Input {...f.register("bankAccount")} /></Field>
+                <Field label="IFSC"><Input {...f.register("bankIfsc")} /></Field>
+                <Field label="Branch"><Input {...f.register("bankBranch")} /></Field>
+                <Field label="UPI ID (optional)"><Input placeholder="company@hdfc" {...f.register("upiId")} /></Field>
+                <Field label="Invoice footer note (optional)">
+                  <Input placeholder="Subject to Vadodara jurisdiction." {...f.register("invoiceFooterNote")} />
+                </Field>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button type="submit" disabled={update.isPending}>
+                {update.isPending ? t("saving") : t("saveChanges")}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

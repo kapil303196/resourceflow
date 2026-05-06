@@ -46,6 +46,16 @@ export default function InvoicesPage() {
   const send = trpc.invoice.send.useMutation({
     onSuccess: () => { toast.success(t("toastUpdated")); utils.invoice.list.invalidate(); },
   });
+  const sendEmail = trpc.invoice.sendEmail.useMutation({
+    onSuccess: (r: any) => {
+      if (r.skipped) toast.warning("Email backend not configured");
+      else toast.success(`Sent to ${r.to}`);
+      utils.invoice.list.invalidate();
+      setSendFor(null);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const [sendFor, setSendFor] = useState<any | null>(null);
 
   const downloadPdf = async (id: string) => {
     const inputEncoded = encodeURIComponent(JSON.stringify({ "0": { json: { id } } }));
@@ -80,6 +90,7 @@ export default function InvoicesPage() {
         canDelete={false}
         rowActions={(row: any) => {
           const out: { label: string; onClick: () => void }[] = [];
+          out.push({ label: "Send by email", onClick: () => setSendFor(row) });
           if (row.status === "DRAFT") out.push({ label: t("markSentAction"), onClick: () => send.mutate({ id: row._id }) });
           if (!["PAID", "CANCELLED"].includes(row.status))
             out.push({ label: t("recordPaymentAction"), onClick: () => setPaymentFor(row) });
@@ -172,6 +183,35 @@ export default function InvoicesPage() {
           await createInv.mutateAsync({
             salesOrderId: v.salesOrderId,
             invoiceDate: new Date(v.invoiceDate),
+          });
+        }}
+      />
+
+      {/* Send by email */}
+      <ResourceForm
+        open={!!sendFor}
+        onOpenChange={(o) => { if (!o) setSendFor(null); }}
+        title={`Email invoice ${sendFor?.invoiceNumber ?? ""}`}
+        description="Sends a Tax Invoice PDF via Amazon SES. Sender name = your tenant name."
+        schema={z.object({
+          to: z.string().email(),
+          message: z.string().optional(),
+        })}
+        defaultValues={{
+          to: sendFor?.customerId?.email ?? "",
+          message: "",
+        }}
+        fields={[
+          { name: "to", label: "Recipient email", type: "email", required: true, span: 2 },
+          { name: "message", label: "Personal note (optional)", type: "textarea", span: 2 },
+        ]}
+        submitting={sendEmail.isPending}
+        onSubmit={async (v: any) => {
+          if (!sendFor) return;
+          await sendEmail.mutateAsync({
+            id: sendFor._id,
+            to: v.to,
+            message: v.message || undefined,
           });
         }}
       />

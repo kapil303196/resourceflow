@@ -7,6 +7,9 @@ import { recordAudit } from "../audit";
 import { tenantStamp } from "../tenant-stamp";
 import { nextNumber } from "../next-number";
 import { addDays } from "date-fns";
+import { renderInvoicePdf } from "@/lib/invoice-pdf";
+import { sendEmail, buildSender } from "@/lib/email";
+import { MaterialGrade } from "@/models";
 import {
   generatePresignedGetUrl,
   uploadBuffer,
@@ -193,24 +196,72 @@ export const invoiceRouter = router({
     }),
 
   /**
-   * Generate a simple PDF (text-based for now to avoid heavy server deps),
-   * upload to S3, return a presigned download URL.
+   * Render the invoice PDF (Indian GST tax-invoice layout), cache it on
+   * S3, return a presigned download URL.
    */
   generatePdfUrl: requirePermission("invoice.read")
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string(), force: z.boolean().optional() }))
     .query(async ({ input, ctx }) => {
+      const { url } = await renderAndCacheInvoicePdf(input.id, ctx.user.tenantId, input.force);
+      return { url };
+    }),
+
+  /**
+   * Email the invoice PDF to a recipient (defaults to the customer's
+   * email on file). Sender is "<TenantName> <verified-from-address>"
+   * via Amazon SES SendRawEmail (so the attachment goes through).
+   */
+  sendEmail: requirePermission("invoice.update")
+    .input(
+      z.object({
+        id: z.string(),
+        to: z.string().email().optional(),
+        cc: z.array(z.string().email()).optional(),
+        message: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
       const inv: any = await Invoice.findById(input.id).populate("customerId").lean();
       if (!inv) throw new TRPCError({ code: "NOT_FOUND" });
-      // If we already have one stored, return it.
-      if (inv.pdfS3Key) {
-        const url = await generatePresignedGetUrl(inv.pdfS3Key, {
-          downloadName: `${inv.invoiceNumber}.pdf`,
+      const recipient = input.to || inv.customerId?.email;
+      if (!recipient) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "No recipient — set the customer's email or pass `to`.",
         });
-        return { url };
       }
-      // Lazy import pdfkit-style generator. For now, render a text PDF.
       const tenant: any = await Tenant.findById(ctx.user.tenantId).lean();
-      const buffer = await renderInvoicePdf(inv, tenant);
+      const order: any = inv.salesOrderId
+        ? await SalesOrder.findById(inv.salesOrderId).lean()
+        : null;
+      const itemsResolved = await resolveItems(order, tenant);
+      const buffer = await renderInvoicePdf({ invoice: inv, order, tenant, itemsResolved });
+
+      const settings = (tenant?.settings ?? {}) as any;
+      const tenantEmail = settings.email as string | undefined;
+      const html = buildInvoiceEmailHtml({
+        tenant,
+        invoice: inv,
+        customer: inv.customerId,
+        message: input.message,
+      });
+      const result = await sendEmail({
+        from: buildSender(tenant?.name),
+        replyTo: tenantEmail,
+        to: recipient,
+        cc: input.cc,
+        subject: `Invoice ${inv.invoiceNumber} from ${tenant?.name ?? "ResourceFlow"}`,
+        html,
+        attachments: [
+          {
+            filename: `${inv.invoiceNumber}.pdf`,
+            content: buffer,
+            contentType: "application/pdf",
+          },
+        ],
+      });
+
+      // Cache PDF in S3 for download too
       const key = buildS3Key({
         tenantId: ctx.user.tenantId,
         entityType: "INVOICE",
@@ -218,11 +269,29 @@ export const invoiceRouter = router({
         fileName: `${inv.invoiceNumber}.pdf`,
       });
       await uploadBuffer({ key, body: buffer, mimeType: "application/pdf" });
-      await Invoice.findByIdAndUpdate(input.id, { $set: { pdfS3Key: key } });
-      const url = await generatePresignedGetUrl(key, {
-        downloadName: `${inv.invoiceNumber}.pdf`,
+      await Invoice.findByIdAndUpdate(input.id, {
+        $set: {
+          pdfS3Key: key,
+          status: inv.status === "DRAFT" ? "SENT" : inv.status,
+          sentAt: new Date(),
+        },
       });
-      return { url };
+
+      await recordAudit({
+        action: "invoice.sendEmail",
+        entityType: "Invoice",
+        entityId: input.id,
+        newValue: { to: recipient, backend: result.backend },
+        ipAddress: ctx.ip,
+        userAgent: ctx.userAgent,
+      });
+
+      return {
+        ok: true,
+        skipped: result.skipped,
+        backend: result.backend,
+        to: recipient,
+      };
     }),
 
   cancel: requirePermission("invoice.delete")
@@ -233,48 +302,94 @@ export const invoiceRouter = router({
     }),
 });
 
-async function renderInvoicePdf(inv: any, tenant: any): Promise<Buffer> {
-  // Use @react-pdf/renderer for the PDF
-  const React = (await import("react")).default;
-  const { renderToBuffer, Document, Page, Text, View, StyleSheet } = await import(
-    "@react-pdf/renderer"
-  );
-  const styles = StyleSheet.create({
-    page: { padding: 40, fontSize: 11, fontFamily: "Helvetica" },
-    title: { fontSize: 18, marginBottom: 12 },
-    row: { flexDirection: "row", marginBottom: 4 },
-    label: { width: 120, color: "#444" },
-    table: { marginTop: 16 },
-    th: { flexDirection: "row", backgroundColor: "#eee", padding: 4 },
-    td: { flexDirection: "row", padding: 4, borderBottom: "0.5pt solid #ddd" },
-    cellNarrow: { width: 80 },
-    cellWide: { flex: 1 },
+/* ----------------------------- helpers ----------------------------- */
+
+async function renderAndCacheInvoicePdf(
+  id: string,
+  tenantId: string,
+  force?: boolean,
+): Promise<{ url: string; key: string }> {
+  const inv: any = await Invoice.findById(id).populate("customerId").lean();
+  if (!inv) throw new TRPCError({ code: "NOT_FOUND" });
+  if (!force && inv.pdfS3Key) {
+    const url = await generatePresignedGetUrl(inv.pdfS3Key, {
+      downloadName: `${inv.invoiceNumber}.pdf`,
+    });
+    return { url, key: inv.pdfS3Key };
+  }
+  const tenant: any = await Tenant.findById(tenantId).lean();
+  const order: any = inv.salesOrderId
+    ? await SalesOrder.findById(inv.salesOrderId).lean()
+    : null;
+  const itemsResolved = await resolveItems(order, tenant);
+  const buffer = await renderInvoicePdf({ invoice: inv, order, tenant, itemsResolved });
+  const key = buildS3Key({
+    tenantId,
+    entityType: "INVOICE",
+    entityId: String(inv._id),
+    fileName: `${inv.invoiceNumber}.pdf`,
   });
-
-  const totalFmt = (n: number) =>
-    `${tenant?.currency ?? "INR"} ${(n / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
-
-  const doc = React.createElement(
-    Document,
-    null,
-    React.createElement(
-      Page,
-      { size: "A4", style: styles.page },
-      React.createElement(Text, { style: styles.title }, `${tenant?.name ?? "Invoice"}`),
-      React.createElement(Text, null, `Invoice ${inv.invoiceNumber}`),
-      React.createElement(Text, null, `Date: ${new Date(inv.invoiceDate).toLocaleDateString()}`),
-      React.createElement(Text, null, `Due: ${new Date(inv.dueDate).toLocaleDateString()}`),
-      React.createElement(Text, null, `Status: ${inv.status}`),
-      React.createElement(View, { style: { marginTop: 20 } },
-        React.createElement(Text, null, `Bill To: ${inv.customerId?.name ?? ""}`),
-        React.createElement(Text, null, `${inv.customerId?.address ?? ""}`),
-      ),
-      React.createElement(View, { style: { marginTop: 24 } },
-        React.createElement(Text, null, `Total: ${totalFmt(inv.totalAmount)}`),
-        React.createElement(Text, null, `Paid: ${totalFmt(inv.paidAmount ?? 0)}`),
-        React.createElement(Text, null, `Outstanding: ${totalFmt(inv.totalAmount - (inv.paidAmount ?? 0))}`),
-      ),
-    ),
-  );
-  return renderToBuffer(doc as any);
+  await uploadBuffer({ key, body: buffer, mimeType: "application/pdf" });
+  await Invoice.findByIdAndUpdate(id, { $set: { pdfS3Key: key } });
+  const url = await generatePresignedGetUrl(key, {
+    downloadName: `${inv.invoiceNumber}.pdf`,
+  });
+  return { url, key };
 }
+
+/** Resolve item names from the sales order (look up grade names). */
+async function resolveItems(order: any, tenant: any) {
+  if (!order?.items) return undefined;
+  const unit = tenant?.unitOfMeasure ?? "Tons";
+  const settings = tenant?.settings ?? {};
+  return Promise.all(
+    order.items.map(async (it: any, i: number) => {
+      const grade: any = it.materialGradeId
+        ? await MaterialGrade.findById(it.materialGradeId).lean()
+        : null;
+      const qty = Number(it.orderedTonnage?.toString?.() ?? it.orderedTonnage ?? 0);
+      const rate = Number(it.pricePerUnit ?? 0) / 100;
+      return {
+        name: grade?.name ?? `Item ${i + 1}`,
+        hsn: settings.defaultHsn ?? "2505", // Sand HSN code
+        qty,
+        unit,
+        rate,
+        amount: qty * rate,
+      };
+    }),
+  );
+}
+
+function buildInvoiceEmailHtml(opts: {
+  tenant: any;
+  invoice: any;
+  customer: any;
+  message?: string;
+}) {
+  const tenantName = opts.tenant?.name ?? "ResourceFlow";
+  const invNumber = opts.invoice.invoiceNumber ?? "—";
+  const dueDate = opts.invoice.dueDate
+    ? new Date(opts.invoice.dueDate).toLocaleDateString("en-IN")
+    : "—";
+  const totalDisplay = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: opts.tenant?.currency ?? "INR",
+    maximumFractionDigits: 2,
+  }).format((opts.invoice.totalAmount ?? 0) / 100);
+  const greeting = opts.customer?.contactName ?? opts.customer?.name ?? "Customer";
+  const note = opts.message
+    ? `<p style="white-space:pre-wrap;color:#475569;">${opts.message.replace(/</g, "&lt;")}</p>`
+    : "";
+  return `
+  <div style="font-family:Inter,system-ui,sans-serif;max-width:560px;color:#0f172a;">
+    <h2 style="margin:0 0 8px;">Invoice ${invNumber}</h2>
+    <p style="margin:0 0 16px;color:#475569;">From ${tenantName}</p>
+    <p>Hi ${greeting.replace(/</g, "&lt;")},</p>
+    <p>Please find attached invoice <strong>${invNumber}</strong> for <strong>${totalDisplay}</strong>, due on <strong>${dueDate}</strong>.</p>
+    ${note}
+    <p style="color:#475569;font-size:12px;margin-top:24px;">If you have any questions about this invoice, just reply to this email — it goes straight to ${tenantName}.</p>
+    <p style="color:#94a3b8;font-size:11px;margin-top:16px;">Sent from ResourceFlow</p>
+  </div>`;
+}
+
