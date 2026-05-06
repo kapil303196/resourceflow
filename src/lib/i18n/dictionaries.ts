@@ -278,6 +278,10 @@ const en = {
   editDriverTitle: "Edit driver",
   addLicenseTitle: "Add license",
   editLicenseTitle: "Edit license",
+  recordExtractionDesc: "Logs against an active license. Auto-decrements available tonnage.",
+  createInvoiceDesc: "Generates from a completed sales order. Total auto-calculated.",
+  outstandingLabel: "Outstanding",
+  due: "Due",
 };
 
 type Dict = typeof en;
@@ -545,6 +549,10 @@ const hi: Dict = {
   editDriverTitle: "ड्राइवर संपादित करें",
   addLicenseTitle: "लाइसेंस जोड़ें",
   editLicenseTitle: "लाइसेंस संपादित करें",
+  recordExtractionDesc: "सक्रिय लाइसेंस पर दर्ज होगा. उपलब्ध टन भार कम हो जाएगा.",
+  createInvoiceDesc: "पूर्ण बिक्री आदेश से बनेगा. कुल राशि स्वतः गणना.",
+  outstandingLabel: "बकाया",
+  due: "नियत",
 };
 
 const gu: Dict = {
@@ -810,6 +818,10 @@ const gu: Dict = {
   editDriverTitle: "ડ્રાઇવર સંપાદિત કરો",
   addLicenseTitle: "લાઇસન્સ ઉમેરો",
   editLicenseTitle: "લાઇસન્સ સંપાદિત કરો",
+  recordExtractionDesc: "સક્રિય લાઇસન્સ સામે નોંધાશે. ઉપલબ્ધ ટન ઘટશે.",
+  createInvoiceDesc: "પૂર્ણ વેચાણ ઓર્ડરથી બનશે. કુલ આપોઆપ ગણાય.",
+  outstandingLabel: "બાકી",
+  due: "નિર્ધારિત",
 };
 
 export const dictionaries: Record<Locale, Dict> = { en, hi, gu };

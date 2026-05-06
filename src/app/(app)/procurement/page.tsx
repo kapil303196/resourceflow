@@ -201,10 +201,10 @@ function PurchaseOrdersInline() {
         data={list.data ?? []}
         loading={list.isLoading}
         filters={[
-          { label: "All", value: "all", active: filter === "all" },
-          { label: "Draft", value: "DRAFT", active: filter === "DRAFT" },
-          { label: "Confirmed", value: "CONFIRMED", active: filter === "CONFIRMED" },
-          { label: "Delivered", value: "DELIVERED", active: filter === "DELIVERED" },
+          { label: t("filterAll"), value: "all", active: filter === "all" },
+          { label: t("filterDraft"), value: "DRAFT", active: filter === "DRAFT" },
+          { label: t("filterConfirmed"), value: "CONFIRMED", active: filter === "CONFIRMED" },
+          { label: t("filterDelivered"), value: "DELIVERED", active: filter === "DELIVERED" },
         ]}
         onFilterChange={setFilter}
         onCreate={() => setOpen(true)}
@@ -235,7 +235,7 @@ function PurchaseOrdersInline() {
       <ResourceForm
         open={open}
         onOpenChange={setOpen}
-        title="New purchase order"
+        title={t("newPOTitle")}
         description="Single-line form. Multi-line POs can be added later."
         schema={poSchema}
         defaultValues={poDefaults}

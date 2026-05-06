@@ -75,11 +75,11 @@ export default function SalesOrdersPage() {
         data={list.data ?? []}
         loading={list.isLoading}
         filters={[
-          { label: "All", value: "all", active: filter === "all" },
-          { label: "Draft", value: "DRAFT", active: filter === "DRAFT" },
-          { label: "Confirmed", value: "CONFIRMED", active: filter === "CONFIRMED" },
-          { label: "Dispatching", value: "DISPATCHING", active: filter === "DISPATCHING" },
-          { label: "Completed", value: "COMPLETED", active: filter === "COMPLETED" },
+          { label: t("filterAll"), value: "all", active: filter === "all" },
+          { label: t("filterDraft"), value: "DRAFT", active: filter === "DRAFT" },
+          { label: t("filterConfirmed"), value: "CONFIRMED", active: filter === "CONFIRMED" },
+          { label: t("dispatching"), value: "DISPATCHING", active: filter === "DISPATCHING" },
+          { label: t("filterCompleted"), value: "COMPLETED", active: filter === "COMPLETED" },
         ]}
         onFilterChange={setFilter}
         onCreate={() => setOpen(true)}
@@ -87,9 +87,9 @@ export default function SalesOrdersPage() {
         canDelete={false}
         rowActions={(row: any) => {
           const next: { from: string; to: string; label: string }[] = [
-            { from: "DRAFT", to: "CONFIRMED", label: "Confirm" },
-            { from: "CONFIRMED", to: "DISPATCHING", label: "Mark dispatching" },
-            { from: "DISPATCHING", to: "COMPLETED", label: "Mark completed" },
+            { from: "DRAFT", to: "CONFIRMED", label: t("confirm") },
+            { from: "CONFIRMED", to: "DISPATCHING", label: t("markDispatchingAction") },
+            { from: "DISPATCHING", to: "COMPLETED", label: t("markCompletedAction") },
           ];
           const action = next.find((n) => n.from === row.status);
           const out: { label: string; onClick: () => void; destructive?: boolean }[] = [];
@@ -100,15 +100,15 @@ export default function SalesOrdersPage() {
             });
           if (!["COMPLETED", "CANCELLED"].includes(row.status))
             out.push({
-              label: "Cancel order",
+              label: t("cancelOrderAction"),
               destructive: true,
               onClick: () => setStatus.mutate({ id: row._id, status: "CANCELLED" }),
             });
           return out;
         }}
         columns={[
-          { key: "orderNumber", header: "Order #", cell: (o: any) => <span className="font-mono font-medium">{o.orderNumber}</span> },
-          { key: "customerId", header: "Customer", cell: (o: any) => o.customerId?.name },
+          { key: "orderNumber", header: t("orderNumber"), cell: (o: any) => <span className="font-mono font-medium">{o.orderNumber}</span> },
+          { key: "customerId", header: t("customer"), cell: (o: any) => o.customerId?.name },
           { key: "orderDate", header: t("date"), cell: (o: any) => format(new Date(o.orderDate), "PP") },
           { key: "items", header: "Lines", cell: (o: any) => o.items?.length ?? 0 },
           { key: "totalAmount", header: t("total"), cell: (o: any) => formatMoney(o.totalAmount ?? 0) },
@@ -134,7 +134,7 @@ export default function SalesOrdersPage() {
       <ResourceForm
         open={open}
         onOpenChange={setOpen}
-        title="New sales order"
+        title={t("newSalesOrderTitle")}
         schema={schema}
         defaultValues={defaults}
         fields={fields}

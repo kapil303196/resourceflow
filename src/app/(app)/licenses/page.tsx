@@ -114,10 +114,10 @@ export default function LicensesPage() {
         data={filtered}
         loading={list.isLoading}
         filters={[
-          { label: "All", value: "all", active: filter === "all", count: items.length },
-          { label: "Active", value: "ACTIVE", active: filter === "ACTIVE", count: buckets.active },
-          { label: "Expiring", value: "expiring", active: filter === "expiring", count: buckets.expiring },
-          { label: "Expired", value: "EXPIRED", active: filter === "EXPIRED", count: buckets.expired },
+          { label: t("filterAll"), value: "all", active: filter === "all", count: items.length },
+          { label: t("filterActive"), value: "ACTIVE", active: filter === "ACTIVE", count: buckets.active },
+          { label: t("filterExpiring"), value: "expiring", active: filter === "expiring", count: buckets.expiring },
+          { label: t("filterExpired"), value: "EXPIRED", active: filter === "EXPIRED", count: buckets.expired },
         ]}
         onFilterChange={setFilter}
         onCreate={() => { setEditing(null); setOpen(true); }}

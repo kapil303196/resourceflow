@@ -153,9 +153,9 @@ export default function FleetPage() {
         onSearchChange={setSearch}
         filters={[
           { label: t("filterAll"), value: "all", active: filter === "all" },
-          { label: "Owned", value: "OWNED", active: filter === "OWNED" },
-          { label: "Per trip", value: "CONTRACTED_TRIP", active: filter === "CONTRACTED_TRIP" },
-          { label: "Daily", value: "CONTRACTED_DAILY", active: filter === "CONTRACTED_DAILY" },
+          { label: t("owned"), value: "OWNED", active: filter === "OWNED" },
+          { label: t("perTrip"), value: "CONTRACTED_TRIP", active: filter === "CONTRACTED_TRIP" },
+          { label: t("contractedDaily"), value: "CONTRACTED_DAILY", active: filter === "CONTRACTED_DAILY" },
         ]}
         onFilterChange={setFilter}
         onCreate={() => { setEditing(null); setOpen(true); }}

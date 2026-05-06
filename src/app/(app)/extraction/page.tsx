@@ -79,10 +79,10 @@ export default function ExtractionPage() {
         data={list.data?.items ?? []}
         loading={list.isLoading}
         filters={[
-          { label: "All", value: "all", active: filter === "all" },
-          { label: "Pending", value: "PENDING", active: filter === "PENDING" },
-          { label: "At refinery", value: "AT_REFINERY", active: filter === "AT_REFINERY" },
-          { label: "Refined", value: "REFINED", active: filter === "REFINED" },
+          { label: t("filterAll"), value: "all", active: filter === "all" },
+          { label: t("filterPending"), value: "PENDING", active: filter === "PENDING" },
+          { label: t("filterAtRefinery"), value: "AT_REFINERY", active: filter === "AT_REFINERY" },
+          { label: t("filterRefined"), value: "REFINED", active: filter === "REFINED" },
         ]}
         onFilterChange={setFilter}
         onCreate={() => setOpen(true)}
@@ -91,7 +91,7 @@ export default function ExtractionPage() {
         rowActions={(row: any) =>
           row.status !== "CANCELLED" && row.status !== "REFINED"
             ? [{
-                label: "Cancel batch",
+                label: t("cancelBatchAction"),
                 destructive: true,
                 onClick: async () => {
                   const reason = window.prompt("Cancellation reason?");
@@ -131,8 +131,8 @@ export default function ExtractionPage() {
       <ResourceForm
         open={open}
         onOpenChange={setOpen}
-        title="Record extraction"
-        description="Logs against an active license. Auto-decrements available tonnage."
+        title={t("recordExtractionTitle")}
+        description={t("recordExtractionDesc")}
         schema={schema}
         defaultValues={defaults}
         fields={fields}

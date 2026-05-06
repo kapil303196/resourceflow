@@ -68,12 +68,12 @@ export default function InvoicesPage() {
         data={list.data ?? []}
         loading={list.isLoading}
         filters={[
-          { label: "All", value: "all", active: filter === "all" },
-          { label: "Draft", value: "DRAFT", active: filter === "DRAFT" },
-          { label: "Sent", value: "SENT", active: filter === "SENT" },
-          { label: "Partial", value: "PARTIAL", active: filter === "PARTIAL" },
-          { label: "Overdue", value: "OVERDUE", active: filter === "OVERDUE" },
-          { label: "Paid", value: "PAID", active: filter === "PAID" },
+          { label: t("filterAll"), value: "all", active: filter === "all" },
+          { label: t("filterDraft"), value: "DRAFT", active: filter === "DRAFT" },
+          { label: t("filterSent"), value: "SENT", active: filter === "SENT" },
+          { label: t("filterPartial"), value: "PARTIAL", active: filter === "PARTIAL" },
+          { label: t("filterOverdue"), value: "OVERDUE", active: filter === "OVERDUE" },
+          { label: t("filterPaid"), value: "PAID", active: filter === "PAID" },
         ]}
         onFilterChange={setFilter}
         onCreate={() => setCreateOpen(true)}
@@ -81,20 +81,20 @@ export default function InvoicesPage() {
         canDelete={false}
         rowActions={(row: any) => {
           const out: { label: string; onClick: () => void }[] = [];
-          if (row.status === "DRAFT") out.push({ label: "Mark sent", onClick: () => send.mutate({ id: row._id }) });
+          if (row.status === "DRAFT") out.push({ label: t("markSentAction"), onClick: () => send.mutate({ id: row._id }) });
           if (!["PAID", "CANCELLED"].includes(row.status))
-            out.push({ label: "Record payment", onClick: () => setPaymentFor(row) });
-          out.push({ label: "Download PDF", onClick: () => downloadPdf(row._id) });
+            out.push({ label: t("recordPaymentAction"), onClick: () => setPaymentFor(row) });
+          out.push({ label: t("downloadPdfAction"), onClick: () => downloadPdf(row._id) });
           return out;
         }}
         columns={[
-          { key: "invoiceNumber", header: "Invoice #", cell: (i: any) => <span className="font-mono font-medium">{i.invoiceNumber}</span> },
-          { key: "customerId", header: "Customer", cell: (i: any) => i.customerId?.name },
+          { key: "invoiceNumber", header: t("invoiceNumber"), cell: (i: any) => <span className="font-mono font-medium">{i.invoiceNumber}</span> },
+          { key: "customerId", header: t("customer"), cell: (i: any) => i.customerId?.name },
           { key: "invoiceDate", header: t("date"), cell: (i: any) => format(new Date(i.invoiceDate), "PP") },
-          { key: "dueDate", header: "Due", cell: (i: any) => format(new Date(i.dueDate), "PP") },
+          { key: "dueDate", header: t("due"), cell: (i: any) => format(new Date(i.dueDate), "PP") },
           { key: "totalAmount", header: t("total"), cell: (i: any) => formatMoney(i.totalAmount) },
           {
-            key: "outstanding", header: "Outstanding",
+            key: "outstanding", header: t("outstandingLabel"),
             cell: (i: any) => formatMoney(Math.max(0, (i.totalAmount ?? 0) - (i.paidAmount ?? 0))),
           },
           { key: "status", header: t("status"), cell: (i: any) => <StatusBadge status={i.status} /> },
@@ -131,8 +131,8 @@ export default function InvoicesPage() {
       <ResourceForm
         open={createOpen}
         onOpenChange={setCreateOpen}
-        title="Create invoice"
-        description="Generates from a completed sales order. Total auto-calculated."
+        title={t("createInvoiceTitle")}
+        description={t("createInvoiceDesc")}
         schema={createSchema}
         defaultValues={{
           salesOrderId: "",
@@ -164,7 +164,7 @@ export default function InvoicesPage() {
       <ResourceForm
         open={!!paymentFor}
         onOpenChange={(o) => { if (!o) setPaymentFor(null); }}
-        title="Record payment"
+        title={t("recordPaymentTitle")}
         description={paymentFor ? `${paymentFor.invoiceNumber} · ${formatMoney(Math.max(0, (paymentFor.totalAmount ?? 0) - (paymentFor.paidAmount ?? 0)))} outstanding` : ""}
         schema={paymentSchema}
         defaultValues={{
