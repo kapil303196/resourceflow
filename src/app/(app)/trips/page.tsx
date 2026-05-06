@@ -50,6 +50,7 @@ export default function TripsPage() {
   const [filter, setFilter] = useState("all");
   const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
   const [completing, setCompleting] = useState<any | null>(null);
 
   const list = trpc.trip.list.useQuery({
@@ -66,6 +67,10 @@ export default function TripsPage() {
 
   const create = trpc.trip.create.useMutation({
     onSuccess: () => { toast.success(t("toastAdded")); utils.trip.list.invalidate(); setOpen(false); },
+    onError: (e) => toast.error(e.message),
+  });
+  const update = trpc.trip.update.useMutation({
+    onSuccess: () => { toast.success(t("toastSaved")); utils.trip.list.invalidate(); setOpen(false); setEditing(null); },
     onError: (e) => toast.error(e.message),
   });
   const start = trpc.trip.start.useMutation({
@@ -153,8 +158,15 @@ export default function TripsPage() {
         onFilterChange={setFilter}
         dateRange={dateRange}
         onDateRangeChange={setDateRange}
-        onCreate={() => setOpen(true)}
-        canEdit={false}
+        onCreate={() => { setEditing(null); setOpen(true); }}
+        onEdit={(row: any) => {
+          if (row.status === "COMPLETED" || row.status === "CANCELLED") {
+            toast.error("Trip is locked — completed/cancelled.");
+            return;
+          }
+          setEditing(row);
+          setOpen(true);
+        }}
         canDelete={false}
         rowActions={(row: any) => {
           const out: { label: string; onClick: () => void; destructive?: boolean }[] = [];
@@ -245,29 +257,66 @@ export default function TripsPage() {
 
       <ResourceForm
         open={open}
-        onOpenChange={setOpen}
-        title={t("newTripTitle")}
+        onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}
+        title={editing ? `Edit ${editing.tripNumber ?? ""}` : t("newTripTitle")}
         schema={schema}
-        defaultValues={defaults}
+        defaultValues={
+          editing
+            ? {
+                ...defaults,
+                vehicleId: editing.vehicleId?._id ?? editing.vehicleId ?? "",
+                driverId: editing.driverId?._id ?? editing.driverId ?? "",
+                tripType: editing.tripType,
+                scheduledDate: editing.scheduledDate
+                  ? new Date(editing.scheduledDate).toISOString().slice(0, 10)
+                  : new Date().toISOString().slice(0, 10),
+                fromLocationId: editing.fromLocationId?._id ?? editing.fromLocationId ?? "",
+                toLocationId: editing.toLocationId?._id ?? editing.toLocationId ?? "",
+                salesOrderId: editing.salesOrderId?._id ?? editing.salesOrderId ?? "",
+                plannedTonnage: Number(editing.plannedTonnage ?? 0),
+                materialGradeId: editing.materials?.[0]?.materialGradeId ?? "",
+                distanceKm: editing.distanceKm ?? 0,
+                notes: editing.notes ?? "",
+              }
+            : defaults
+        }
         fields={fields}
-        submitting={create.isPending}
+        submitting={create.isPending || update.isPending}
         onSubmit={async (v) => {
-          const payload: any = {
-            vehicleId: v.vehicleId,
-            tripType: v.tripType,
-            scheduledDate: new Date(v.scheduledDate),
-            plannedTonnage: v.plannedTonnage,
-            distanceKm: v.distanceKm,
-            notes: v.notes,
-          };
-          if (v.driverId) payload.driverId = v.driverId;
-          if (v.fromLocationId) payload.fromLocationId = v.fromLocationId;
-          if (v.toLocationId) payload.toLocationId = v.toLocationId;
-          if (v.salesOrderId) payload.salesOrderId = v.salesOrderId;
-          if (v.materialGradeId) {
-            payload.materials = [{ materialGradeId: v.materialGradeId, tonnage: v.plannedTonnage ?? 0 }];
+          if (editing) {
+            const payload: any = {
+              id: editing._id,
+              scheduledDate: new Date(v.scheduledDate),
+              plannedTonnage: v.plannedTonnage,
+              distanceKm: v.distanceKm,
+              notes: v.notes,
+            };
+            if (v.driverId !== undefined) payload.driverId = v.driverId || "";
+            if (v.fromLocationId !== undefined) payload.fromLocationId = v.fromLocationId || "";
+            if (v.toLocationId !== undefined) payload.toLocationId = v.toLocationId || "";
+            if (v.salesOrderId !== undefined) payload.salesOrderId = v.salesOrderId || "";
+            if (v.materialGradeId) {
+              payload.materials = [{ materialGradeId: v.materialGradeId, tonnage: v.plannedTonnage ?? 0 }];
+            }
+            await update.mutateAsync(payload);
+          } else {
+            const payload: any = {
+              vehicleId: v.vehicleId,
+              tripType: v.tripType,
+              scheduledDate: new Date(v.scheduledDate),
+              plannedTonnage: v.plannedTonnage,
+              distanceKm: v.distanceKm,
+              notes: v.notes,
+            };
+            if (v.driverId) payload.driverId = v.driverId;
+            if (v.fromLocationId) payload.fromLocationId = v.fromLocationId;
+            if (v.toLocationId) payload.toLocationId = v.toLocationId;
+            if (v.salesOrderId) payload.salesOrderId = v.salesOrderId;
+            if (v.materialGradeId) {
+              payload.materials = [{ materialGradeId: v.materialGradeId, tonnage: v.plannedTonnage ?? 0 }];
+            }
+            await create.mutateAsync(payload);
           }
-          await create.mutateAsync(payload);
         }}
       />
 

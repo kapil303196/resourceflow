@@ -129,6 +129,39 @@ export const extractionRouter = router({
       return { id: String(batch._id), royaltyAmount };
     }),
 
+  /**
+   * Edit notes / vehicle / extracted date on a non-cancelled, non-refined
+   * batch. Tonnage, license, and royalty are immutable after creation.
+   */
+  update: requirePermission("extraction.update")
+    .input(
+      z.object({
+        id: z.string(),
+        extractedDate: z.date().optional(),
+        vehicleId: z.string().optional(),
+        operatorUserId: z.string().optional(),
+        notes: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { id, ...rest } = input;
+      const batch: any = await ExtractionBatch.findById(id);
+      if (!batch) throw new TRPCError({ code: "NOT_FOUND" });
+      if (batch.status === "REFINED" || batch.status === "CANCELLED") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot edit a refined or cancelled batch.",
+        });
+      }
+      for (const k of ["vehicleId", "operatorUserId"] as const) {
+        if (rest[k] === "") delete (rest as any)[k];
+      }
+      await ExtractionBatch.findByIdAndUpdate(id, {
+        $set: { ...rest, updatedBy: ctx.user.id },
+      });
+      return { ok: true };
+    }),
+
   setStatus: requirePermission("extraction.update")
     .input(
       z.object({

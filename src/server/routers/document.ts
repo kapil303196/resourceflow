@@ -151,6 +151,29 @@ export const documentRouter = router({
         .lean();
     }),
 
+  /**
+   * Edit document metadata (type / number / expiry / notes). The S3
+   * file itself stays immutable; uploading a new version requires
+   * deleting and re-uploading.
+   */
+  update: requirePermission("document.update")
+    .input(
+      z.object({
+        id: z.string(),
+        documentType: z.string().min(1).optional(),
+        documentNumber: z.string().optional(),
+        expiryDate: z.date().optional(),
+        notes: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { id, ...rest } = input;
+      await Document_.findByIdAndUpdate(id, {
+        $set: { ...rest, updatedBy: ctx.user.id },
+      });
+      return { ok: true };
+    }),
+
   markVerified: requirePermission("document.update")
     .input(z.object({ id: z.string(), verified: z.boolean() }))
     .mutation(async ({ input, ctx }) => {

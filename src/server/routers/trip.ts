@@ -382,6 +382,53 @@ export const tripRouter = router({
       return { ok: true, tripCost };
     }),
 
+  /**
+   * Edit "safe" trip fields. Lifecycle fields (status, departure/arrival
+   * time, actualTonnage, tripCost) are owned by start/complete/cancel.
+   */
+  update: requirePermission("trip.update")
+    .input(
+      z.object({
+        id: z.string(),
+        driverId: z.string().optional(),
+        scheduledDate: z.date().optional(),
+        fromLocationId: z.string().optional(),
+        toLocationId: z.string().optional(),
+        salesOrderId: z.string().optional(),
+        plannedTonnage: z.number().min(0).optional(),
+        materials: z.array(tripMaterial).optional(),
+        distanceKm: z.number().min(0).optional(),
+        notes: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { id, ...rest } = input;
+      const trip: any = await Trip.findById(id);
+      if (!trip) throw new TRPCError({ code: "NOT_FOUND" });
+      if (trip.status === "COMPLETED" || trip.status === "CANCELLED") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot edit a completed or cancelled trip.",
+        });
+      }
+      // Strip empty optional refs so they unset cleanly
+      for (const k of ["driverId", "fromLocationId", "toLocationId", "salesOrderId"] as const) {
+        if (rest[k] === "") delete (rest as any)[k];
+      }
+      await Trip.findByIdAndUpdate(id, {
+        $set: { ...rest, updatedBy: ctx.user.id },
+      });
+      await recordAudit({
+        action: "trip.update",
+        entityType: "Trip",
+        entityId: id,
+        newValue: rest,
+        ipAddress: ctx.ip,
+        userAgent: ctx.userAgent,
+      });
+      return { ok: true };
+    }),
+
   cancel: requirePermission("trip.update")
     .input(z.object({ id: z.string(), reason: z.string() }))
     .mutation(async ({ input }) => {

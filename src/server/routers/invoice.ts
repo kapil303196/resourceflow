@@ -113,6 +113,35 @@ export const invoiceRouter = router({
       return { ok: true };
     }),
 
+  /**
+   * Edit invoice metadata. Total/paid owned by recordPayment;
+   * status by send/cancel/recordPayment.
+   */
+  update: requirePermission("invoice.update")
+    .input(
+      z.object({
+        id: z.string(),
+        invoiceDate: z.date().optional(),
+        dueDate: z.date().optional(),
+        notes: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { id, ...rest } = input;
+      const inv: any = await Invoice.findById(id);
+      if (!inv) throw new TRPCError({ code: "NOT_FOUND" });
+      if (inv.status === "CANCELLED" || inv.status === "PAID") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot edit a cancelled or fully paid invoice.",
+        });
+      }
+      await Invoice.findByIdAndUpdate(id, {
+        $set: { ...rest, updatedBy: ctx.user.id, pdfS3Key: undefined },
+      });
+      return { ok: true };
+    }),
+
   recordPayment: requirePermission("payment.create")
     .input(
       z.object({
