@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { Truck, AlertTriangle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { ResourceList } from "@/components/resource-list";
+import { ResourceList, DetailField } from "@/components/resource-list";
 import { ResourceForm, type FieldDef } from "@/components/resource-form";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/status-badge";
@@ -208,6 +208,23 @@ export default function FleetPage() {
             </div>
           );
         }}
+        detailTitle={(v: any) => v.registrationNumber}
+        detailRender={(v: any) => (
+          <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <DetailField label={t("status")} value={<StatusBadge status={v.currentStatus} />} />
+            <DetailField label={t("type")} value={t(TYPES.find((x) => x.value === v.vehicleType)?.labelKey ?? "type_other")} />
+            <DetailField label="Ownership" value={t(OWNERSHIP.find((x) => x.value === v.ownershipType)?.labelKey ?? "own_owned")} />
+            <DetailField label="Capacity" value={`${v.capacityTons}t`} />
+            <DetailField label="Make / Model" value={[v.make, v.model].filter(Boolean).join(" ") || null} />
+            <DetailField label="Year" value={v.year} />
+            <DetailField label="Contractor" value={v.contractorId?.name} />
+            <DetailField label="Insurance expiry" value={v.insuranceExpiryDate ? format(new Date(v.insuranceExpiryDate), "PP") : null} />
+            <DetailField label="Fitness expiry" value={v.fitnessExpiryDate ? format(new Date(v.fitnessExpiryDate), "PP") : null} />
+            <DetailField label="Permit expiry" value={v.permitExpiryDate ? format(new Date(v.permitExpiryDate), "PP") : null} />
+            <DetailField label="PUC expiry" value={v.pucExpiryDate ? format(new Date(v.pucExpiryDate), "PP") : null} />
+            {v.notes && <DetailField span={2} label={t("notes")} value={v.notes} />}
+          </div>
+        )}
       />
       <ResourceForm
         open={open}

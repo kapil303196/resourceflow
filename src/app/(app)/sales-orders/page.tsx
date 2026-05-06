@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ShoppingCart } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { ResourceList } from "@/components/resource-list";
+import { ResourceList, DetailField } from "@/components/resource-list";
 import { ResourceForm, type FieldDef } from "@/components/resource-form";
 import { StatusBadge } from "@/components/status-badge";
 import { useI18n } from "@/components/i18n-provider";
@@ -125,6 +125,29 @@ export default function SalesOrdersPage() {
               <span>{format(new Date(o.orderDate), "MMM d, yyyy")}</span>
               <span className="font-medium tabular text-foreground">{formatMoney(o.totalAmount ?? 0)}</span>
             </div>
+          </div>
+        )}
+        detailTitle={(o: any) => o.orderNumber}
+        detailRender={(o: any) => (
+          <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <DetailField label={t("status")} value={<StatusBadge status={o.status} />} />
+            <DetailField label={t("customer")} value={o.customerId?.name} />
+            <DetailField label={t("date")} value={format(new Date(o.orderDate), "PP")} />
+            <DetailField label="Required by" value={o.requiredByDate ? format(new Date(o.requiredByDate), "PP") : null} />
+            <DetailField span={2} label="Items" value={
+              (o.items ?? []).length === 0 ? "—" : (
+                <ul className="space-y-1 mt-1">
+                  {(o.items ?? []).map((it: any, i: number) => (
+                    <li key={i} className="flex justify-between border-t pt-1 first:border-t-0 first:pt-0">
+                      <span>Grade {i + 1} · <span className="tabular">{Number(it.orderedTonnage ?? 0).toFixed(2)} t</span></span>
+                      <span className="tabular">{formatMoney(Math.round(Number(it.orderedTonnage ?? 0) * (it.pricePerUnit ?? 0)))}</span>
+                    </li>
+                  ))}
+                </ul>
+              )
+            } />
+            <DetailField span={2} label={t("total")} value={formatMoney(o.totalAmount ?? 0)} />
+            {o.notes && <DetailField span={2} label={t("notes")} value={o.notes} />}
           </div>
         )}
       />

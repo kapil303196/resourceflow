@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { UserCircle2, Phone, AlertTriangle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { ResourceList } from "@/components/resource-list";
+import { ResourceList, DetailField } from "@/components/resource-list";
 import { ResourceForm, type FieldDef } from "@/components/resource-form";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/status-badge";
@@ -199,6 +199,26 @@ export default function DriversPage() {
                 <AlertTriangle className="size-3 mr-1" />License expiring
               </Badge>
             )}
+          </div>
+        )}
+        detailTitle={(d: any) => d.name}
+        detailRender={(d: any) => (
+          <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <DetailField label={t("status")} value={<StatusBadge status={d.currentStatus} />} />
+            <DetailField label={t("phone")} value={d.phone} />
+            <DetailField label="Employment" value={t(EMP.find((e) => e.value === d.employmentType)?.labelKey ?? "emp_permanent")} />
+            <DetailField label="Contractor" value={d.contractorId?.name} />
+            <DetailField label="Vehicle" value={d.assignedVehicleId?.registrationNumber} />
+            <DetailField label="License #" value={d.licenseNumber} />
+            <DetailField label="License class" value={d.licenseClass} />
+            <DetailField label="License expiry" value={d.licenseExpiryDate ? format(new Date(d.licenseExpiryDate), "PP") : null} />
+            <DetailField label="Aadhaar" value={d.aadhaarNumber} />
+            <DetailField label="Blood group" value={d.bloodGroup} />
+            <DetailField label="Joining" value={d.joiningDate ? format(new Date(d.joiningDate), "PP") : null} />
+            <DetailField label="Salary" value={`₹${((d.salaryAmount ?? 0) / 100).toLocaleString("en-IN")} (${t(SAL.find((s) => s.value === d.salaryCycle)?.labelKey ?? "sal_monthly")})`} />
+            <DetailField span={2} label="Emergency contact" value={d.emergencyContactName ? `${d.emergencyContactName} · ${d.emergencyContactPhone ?? ""}` : null} />
+            <DetailField span={2} label={t("address")} value={d.address} />
+            {d.notes && <DetailField span={2} label={t("notes")} value={d.notes} />}
           </div>
         )}
       />
