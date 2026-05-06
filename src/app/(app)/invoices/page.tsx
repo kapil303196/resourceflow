@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { Receipt, Download } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { ResourceList } from "@/components/resource-list";
+import { ResourceList, DetailField } from "@/components/resource-list";
 import { ResourceForm, type FieldDef } from "@/components/resource-form";
 import { StatusBadge } from "@/components/status-badge";
 import { useI18n } from "@/components/i18n-provider";
@@ -122,6 +122,26 @@ export default function InvoicesPage() {
                   )}
                 </div>
               </div>
+            </div>
+          );
+        }}
+        detailTitle={(i: any) => i.invoiceNumber}
+        detailRender={(i: any) => {
+          const outstanding = Math.max(0, (i.totalAmount ?? 0) - (i.paidAmount ?? 0));
+          return (
+            <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+              <DetailField label={t("status")} value={<StatusBadge status={i.status} />} />
+              <DetailField label={t("customer")} value={i.customerId?.name} />
+              <DetailField label={t("date")} value={format(new Date(i.invoiceDate), "PP")} />
+              <DetailField label={t("due")} value={format(new Date(i.dueDate), "PP")} />
+              <DetailField label={t("total")} value={formatMoney(i.totalAmount ?? 0)} />
+              <DetailField label="Paid" value={formatMoney(i.paidAmount ?? 0)} />
+              <DetailField span={2} label={t("outstandingLabel")} value={
+                <span className={outstanding > 0 ? "text-amber-600 dark:text-amber-400 font-semibold" : ""}>
+                  {formatMoney(outstanding)}
+                </span>
+              } />
+              {i.notes && <DetailField span={2} label={t("notes")} value={i.notes} />}
             </div>
           );
         }}

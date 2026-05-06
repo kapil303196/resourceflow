@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { format, differenceInDays } from "date-fns";
 import { ScrollText, AlertTriangle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { ResourceList } from "@/components/resource-list";
+import { ResourceList, DetailField } from "@/components/resource-list";
 import { ResourceForm, type FieldDef } from "@/components/resource-form";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/status-badge";
@@ -195,11 +195,41 @@ export default function LicensesPage() {
             </div>
           );
         }}
+        detailTitle={(l: any) => l.licenseNumber}
+        detailRender={(l: any) => (
+          <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <DetailField label={t("status")} value={<StatusBadge status={l.status} />} />
+            <DetailField label="Location" value={l.locationId?.name} />
+            <DetailField label="Issuing authority" value={l.issuingAuthority} />
+            <DetailField label="Royalty rate" value={`₹${(l.royaltyRatePerUnit ?? 0) / 100}/unit`} />
+            <DetailField label="Valid from" value={format(new Date(l.validFrom), "PP")} />
+            <DetailField label="Valid to" value={format(new Date(l.validTo), "PP")} />
+            <DetailField label="Permitted" value={l.permittedTonnage.toFixed(2)} />
+            <DetailField label="Used" value={l.usedTonnage.toFixed(2)} />
+            <DetailField span={2} label="Utilization" value={
+              <div className="space-y-1.5 mt-0.5">
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full transition-all",
+                      l.utilization > 0.9 ? "bg-rose-500" : l.utilization > 0.7 ? "bg-amber-500" : "bg-emerald-500",
+                    )}
+                    style={{ width: `${Math.min(100, l.utilization * 100)}%` }}
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground tabular">
+                  {(l.utilization * 100).toFixed(1)}%
+                </div>
+              </div>
+            } />
+            {l.notes && <DetailField span={2} label={t("notes")} value={l.notes} />}
+          </div>
+        )}
       />
       <ResourceForm
         open={open}
         onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}
-        title={editing ? "Edit license" : "Add license"}
+        title={editing ? t("editLicenseTitle") : t("addLicenseTitle")}
         schema={schema}
         defaultValues={editing ? {
           ...defaults, ...editing,

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Phone, Mail, MapPin } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { ResourceList } from "@/components/resource-list";
+import { ResourceList, DetailField } from "@/components/resource-list";
 import { ResourceForm, type FieldDef } from "@/components/resource-form";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/components/i18n-provider";
@@ -162,6 +162,25 @@ export default function CustomersPage() {
                 {formatMoney(c.creditLimit ?? 0)} · {c.creditDays}d
               </span>
             </div>
+          </div>
+        )}
+        detailTitle={(c: any) => c.name}
+        detailRender={(c: any) => (
+          <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <DetailField span={2} label={t("name")} value={c.name} />
+            <DetailField label="Contact" value={c.contactName} />
+            <DetailField label={t("phone")} value={c.phone} />
+            <DetailField span={2} label="Email" value={c.email} />
+            <DetailField span={2} label={t("address")} value={c.address} />
+            <DetailField label="GSTIN" value={c.gstin} />
+            <DetailField label={t("status")} value={
+              <Badge variant={c.isActive ? "success" : "secondary"}>
+                {c.isActive ? t("active") : t("inactive")}
+              </Badge>
+            } />
+            <DetailField label="Credit limit" value={formatMoney(c.creditLimit ?? 0)} />
+            <DetailField label="Credit days" value={`${c.creditDays}d`} />
+            {c.notes && <DetailField span={2} label={t("notes")} value={c.notes} />}
           </div>
         )}
       />
