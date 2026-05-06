@@ -102,9 +102,10 @@ export default function ExtractionPage() {
             : []
         }
         columns={[
+          { key: "batchNumber", header: "#", cell: (e: any) => <span className="font-mono font-medium text-xs">{e.batchNumber ?? "—"}</span> },
           { key: "extractedDate", header: t("date"), cell: (e: any) => format(new Date(e.extractedDate), "PP") },
-          { key: "licenseId", header: "License", cell: (e: any) => e.licenseId?.licenseNumber },
-          { key: "locationId", header: "Source", cell: (e: any) => e.locationId?.name },
+          { key: "licenseId", header: t("license"), cell: (e: any) => e.licenseId?.licenseNumber },
+          { key: "locationId", header: t("loc_source"), cell: (e: any) => e.locationId?.name },
           { key: "grossTonnage", header: "Tonnage", cell: (e: any) => formatTonnage(e.grossTonnage) },
           { key: "royaltyAmount", header: "Royalty", cell: (e: any) => formatMoney(e.royaltyAmount ?? 0) },
           { key: "status", header: t("status"), cell: (e: any) => <StatusBadge status={e.status} /> },
@@ -114,6 +115,7 @@ export default function ExtractionPage() {
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <Pickaxe className="size-4 text-muted-foreground shrink-0" />
+                <span className="font-mono font-semibold text-xs">{e.batchNumber ?? ""}</span>
                 <span className="font-medium">{formatTonnage(e.grossTonnage)}</span>
               </div>
               <StatusBadge status={e.status} />

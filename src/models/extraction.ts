@@ -3,6 +3,7 @@ import { applyBasePlugin, baseSchemaOptions } from "@/lib/base-schema";
 
 const extractionBatchSchema = new Schema(
   {
+    batchNumber: { type: String }, // auto-generated, e.g. "E-50001"
     licenseId: { type: Schema.Types.ObjectId, ref: "License", required: true },
     locationId: { type: Schema.Types.ObjectId, ref: "Location", required: true },
     extractedDate: { type: Date, required: true },
@@ -24,5 +25,6 @@ applyBasePlugin(extractionBatchSchema);
 extractionBatchSchema.index({ tenantId: 1, licenseId: 1, extractedDate: -1 });
 extractionBatchSchema.index({ tenantId: 1, status: 1, extractedDate: -1 });
 extractionBatchSchema.index({ tenantId: 1, locationId: 1 });
+extractionBatchSchema.index({ tenantId: 1, batchNumber: 1 }, { sparse: true });
 export const ExtractionBatch =
   models.ExtractionBatch || model("ExtractionBatch", extractionBatchSchema);

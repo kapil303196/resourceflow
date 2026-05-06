@@ -13,7 +13,6 @@ import { formatMoney, formatTonnage } from "@/lib/utils";
 
 const schema = z.object({
   customerId: z.string().min(1),
-  orderNumber: z.string().min(1),
   orderDate: z.string().min(1),
   requiredByDate: z.string().optional(),
   materialGradeId: z.string().min(1),
@@ -24,7 +23,6 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 const defaults: FormValues = {
   customerId: "",
-  orderNumber: "",
   orderDate: new Date().toISOString().slice(0, 10),
   requiredByDate: "",
   materialGradeId: "",
@@ -51,9 +49,8 @@ export default function SalesOrdersPage() {
   });
 
   const fields: FieldDef[] = [
-    { name: "orderNumber", label: t("orderNumber"), type: "text", required: true, placeholder: "SO-1001" },
     {
-      name: "customerId", label: t("customer"), type: "select", required: true,
+      name: "customerId", label: t("customer"), type: "select", required: true, span: 2,
       options: (customers.data?.items ?? []).map((c: any) => ({ value: c._id, label: c.name })),
     },
     { name: "orderDate", label: t("field_orderDate"), type: "date", required: true },
@@ -142,7 +139,6 @@ export default function SalesOrdersPage() {
         onSubmit={async (v) => {
           await create.mutateAsync({
             customerId: v.customerId,
-            orderNumber: v.orderNumber,
             orderDate: new Date(v.orderDate),
             requiredByDate: v.requiredByDate ? new Date(v.requiredByDate) : undefined,
             items: [{

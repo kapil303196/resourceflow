@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { router, requirePermission } from "../trpc";
 import { PurchaseOrder, PurchaseDelivery, InventoryLedger } from "@/models";
 import { recordAudit } from "../audit";
+import { nextNumber } from "../next-number";
 import { connectMongo, mongoose } from "@/lib/mongo";
 
 const itemSchema = z.object({
@@ -14,7 +15,7 @@ const itemSchema = z.object({
 
 const createInput = z.object({
   supplierId: z.string(),
-  poNumber: z.string().min(1),
+  poNumber: z.string().optional(), // auto-generated server-side
   orderDate: z.date(),
   expectedDeliveryDate: z.date().optional(),
   items: z.array(itemSchema).min(1),
@@ -95,8 +96,10 @@ export const purchaseOrderRouter = router({
   create: requirePermission("purchase.create")
     .input(createInput)
     .mutation(async ({ input, ctx }) => {
+      const poNumber = input.poNumber || (await nextNumber("PO"));
       const po = await PurchaseOrder.create({
         ...input,
+        poNumber,
         totalAmount: computeTotal(input.items),
         status: "DRAFT",
       });

@@ -13,6 +13,7 @@ import {
   Tenant,
 } from "@/models";
 import { recordAudit } from "../audit";
+import { nextNumber } from "../next-number";
 import { connectMongo, mongoose } from "@/lib/mongo";
 import {
   buildS3Key,
@@ -26,7 +27,8 @@ const tripMaterial = z.object({
 });
 
 const createInput = z.object({
-  tripNumber: z.string().min(1),
+  // tripNumber is auto-generated server-side; ignored if provided.
+  tripNumber: z.string().optional(),
   vehicleId: z.string(),
   driverId: z.string().optional(),
   salesOrderId: z.string().optional(),
@@ -149,8 +151,10 @@ export const tripRouter = router({
         vehicle.ownershipType === "OWNED" || vehicle.ownershipType === "LEASED"
           ? "OWNED"
           : "CONTRACTED";
+      const tripNumber = input.tripNumber || (await nextNumber("TRIP"));
       const trip = await Trip.create({
         ...input,
+        tripNumber,
         vehicleOwnershipSnapshot: ownershipSnapshot,
         contractorId: vehicle.contractorId,
         driverId: input.driverId ?? vehicle.assignedDriverId,
@@ -395,7 +399,7 @@ export const tripRouter = router({
     .input(
       z.object({
         tripId: z.string(),
-        slipNumber: z.string().min(1),
+        slipNumber: z.string().optional(), // auto-generated when omitted
         materialGradeId: z.string(),
         weightIn: z.number().min(0),
         weightOut: z.number().min(0),
@@ -404,9 +408,10 @@ export const tripRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const netTonnage = Math.max(0, input.weightOut - input.weightIn);
+      const slipNumber = input.slipNumber || (await nextNumber("SLIP"));
       const slip = await LoadingSlip.create({
         tripId: input.tripId,
-        slipNumber: input.slipNumber,
+        slipNumber,
         issuedAt: new Date(),
         issuedByUserId: ctx.user.id,
         materialGradeId: input.materialGradeId,

@@ -18,7 +18,6 @@ const TRIP_TYPE_KEYS: Record<string, string> = {
 };
 
 const schema = z.object({
-  tripNumber: z.string().min(1),
   vehicleId: z.string().min(1),
   driverId: z.string().optional(),
   tripType: z.enum(["DELIVERY", "EXTRACTION", "INTERNAL_TRANSFER", "PURCHASE_PICKUP"]),
@@ -33,7 +32,6 @@ const schema = z.object({
 });
 type FormValues = z.infer<typeof schema>;
 const defaults: FormValues = {
-  tripNumber: "",
   vehicleId: "",
   driverId: "",
   tripType: "DELIVERY",
@@ -89,8 +87,7 @@ export default function TripsPage() {
   }));
 
   const fields: FieldDef[] = [
-    { name: "tripNumber", label: t("tripNumber"), type: "text", required: true, placeholder: "T-5001" },
-    { name: "tripType", label: t("type"), type: "select", required: true, options: tripTypeOptions },
+    { name: "tripType", label: t("type"), type: "select", required: true, options: tripTypeOptions, span: 2 },
     {
       name: "vehicleId", label: t("vehicle"), type: "select", required: true,
       options: (vehicles.data?.items ?? []).map((v: any) => ({ value: v._id, label: v.registrationNumber })),
@@ -256,7 +253,6 @@ export default function TripsPage() {
         submitting={create.isPending}
         onSubmit={async (v) => {
           const payload: any = {
-            tripNumber: v.tripNumber,
             vehicleId: v.vehicleId,
             tripType: v.tripType,
             scheduledDate: new Date(v.scheduledDate),

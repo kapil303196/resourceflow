@@ -13,7 +13,6 @@ import { formatMoney } from "@/lib/utils";
 
 const createSchema = z.object({
   salesOrderId: z.string().min(1),
-  invoiceNumber: z.string().min(1),
   invoiceDate: z.string().min(1),
 });
 type CreateForm = z.infer<typeof createSchema>;
@@ -156,7 +155,6 @@ export default function InvoicesPage() {
         schema={createSchema}
         defaultValues={{
           salesOrderId: "",
-          invoiceNumber: "",
           invoiceDate: new Date().toISOString().slice(0, 10),
         }}
         fields={[
@@ -167,14 +165,12 @@ export default function InvoicesPage() {
               label: `${o.orderNumber} · ${o.customerId?.name ?? ""} · ${formatMoney(o.totalAmount ?? 0)}`,
             })),
           },
-          { name: "invoiceNumber", label: t("invoiceNumber"), type: "text", required: true, placeholder: "INV-2001" },
-          { name: "invoiceDate", label: t("field_invoiceDate"), type: "date", required: true },
+          { name: "invoiceDate", label: t("field_invoiceDate"), type: "date", required: true, span: 2 },
         ]}
         submitting={createInv.isPending}
         onSubmit={async (v) => {
           await createInv.mutateAsync({
             salesOrderId: v.salesOrderId,
-            invoiceNumber: v.invoiceNumber,
             invoiceDate: new Date(v.invoiceDate),
           });
         }}

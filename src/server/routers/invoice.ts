@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { router, requirePermission } from "../trpc";
 import { Invoice, Payment, SalesOrder, Customer, Tenant } from "@/models";
 import { recordAudit } from "../audit";
+import { nextNumber } from "../next-number";
 import { addDays } from "date-fns";
 import {
   generatePresignedGetUrl,
@@ -63,7 +64,7 @@ export const invoiceRouter = router({
     .input(
       z.object({
         salesOrderId: z.string(),
-        invoiceNumber: z.string().min(1),
+        invoiceNumber: z.string().optional(), // auto-generated server-side
         invoiceDate: z.date().optional(),
       }),
     )
@@ -79,10 +80,11 @@ export const invoiceRouter = router({
       );
       const invoiceDate = input.invoiceDate ?? new Date();
       const dueDate = addDays(invoiceDate, customer.creditDays ?? 30);
+      const invoiceNumber = input.invoiceNumber || (await nextNumber("INVOICE"));
       const inv = await Invoice.create({
         salesOrderId: input.salesOrderId,
         customerId: order.customerId,
-        invoiceNumber: input.invoiceNumber,
+        invoiceNumber,
         invoiceDate,
         dueDate,
         totalAmount,

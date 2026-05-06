@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { router, requirePermission } from "../trpc";
 import { SalesOrder, MaterialGrade, InventoryLedger } from "@/models";
 import { recordAudit } from "../audit";
+import { nextNumber } from "../next-number";
 
 const itemSchema = z.object({
   materialGradeId: z.string(),
@@ -13,7 +14,7 @@ const itemSchema = z.object({
 
 const createInput = z.object({
   customerId: z.string(),
-  orderNumber: z.string().min(1),
+  orderNumber: z.string().optional(), // auto-generated server-side
   orderDate: z.date(),
   requiredByDate: z.date().optional(),
   items: z.array(itemSchema).min(1),
@@ -89,8 +90,10 @@ export const salesOrderRouter = router({
   create: requirePermission("salesOrder.create")
     .input(createInput)
     .mutation(async ({ input, ctx }) => {
+      const orderNumber = input.orderNumber || (await nextNumber("SO"));
       const o = await SalesOrder.create({
         ...input,
+        orderNumber,
         totalAmount: totalFor(input.items),
         status: "DRAFT",
       });

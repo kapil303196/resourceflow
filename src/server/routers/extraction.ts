@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { router, requirePermission } from "../trpc";
 import { ExtractionBatch, License } from "@/models";
 import { recordAudit } from "../audit";
+import { nextNumber } from "../next-number";
 
 const createInput = z.object({
   licenseId: z.string(),
@@ -102,8 +103,10 @@ export const extractionRouter = router({
         input.grossTonnage * (license.royaltyRatePerUnit ?? 0),
       );
 
+      const batchNumber = await nextNumber("EXTRACTION");
       const batch = await ExtractionBatch.create({
         ...input,
+        batchNumber,
         royaltyAmount,
         status: "PENDING",
       });

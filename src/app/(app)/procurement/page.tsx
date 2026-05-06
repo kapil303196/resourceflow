@@ -140,7 +140,6 @@ const poItemSchema = z.object({
 
 const poSchema = z.object({
   supplierId: z.string().min(1),
-  poNumber: z.string().min(1),
   orderDate: z.string().min(1),
   expectedDeliveryDate: z.string().optional(),
   // Single-item simplified form (most common path); can be extended later
@@ -153,7 +152,6 @@ const poSchema = z.object({
 type POForm = z.infer<typeof poSchema>;
 const poDefaults: POForm = {
   supplierId: "",
-  poNumber: "",
   orderDate: new Date().toISOString().slice(0, 10),
   expectedDeliveryDate: "",
   materialGradeId: "",
@@ -176,9 +174,8 @@ function PurchaseOrdersInline() {
   });
 
   const fields: FieldDef[] = [
-    { name: "poNumber", label: t("poNumber"), type: "text", required: true, placeholder: "PO-3001" },
     {
-      name: "supplierId", label: t("field_supplier"), type: "select", required: true,
+      name: "supplierId", label: t("field_supplier"), type: "select", required: true, span: 2,
       options: (suppliers.data?.items ?? []).map((s: any) => ({ value: s._id, label: s.name })),
     },
     { name: "orderDate", label: t("field_orderDate"), type: "date", required: true },
@@ -243,7 +240,6 @@ function PurchaseOrdersInline() {
         onSubmit={async (v) => {
           await create.mutateAsync({
             supplierId: v.supplierId,
-            poNumber: v.poNumber,
             orderDate: new Date(v.orderDate),
             expectedDeliveryDate: v.expectedDeliveryDate ? new Date(v.expectedDeliveryDate) : undefined,
             items: [{
