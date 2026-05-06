@@ -135,7 +135,7 @@ export default function TripsPage() {
         ...((grades.data?.items ?? []).map((g: any) => ({ value: g._id, label: g.name }))),
       ],
     },
-    { name: "distanceKm", label: "Distance (km)", type: "number" },
+    { name: "distanceKm", label: t("field_distanceKm"), type: "number" },
     { name: "notes", label: t("notes"), type: "textarea", span: 2 },
   ];
 
@@ -287,7 +287,7 @@ export default function TripsPage() {
         defaultValues={{ actualTonnage: completing?.plannedTonnage ?? 0, fuelCost: 0 }}
         fields={[
           { name: "actualTonnage", label: t("tonnage"), type: "number", step: 0.01, required: true },
-          { name: "fuelCost", label: "Fuel cost", type: "money" },
+          { name: "fuelCost", label: t("field_fuelCost"), type: "money" },
         ]}
         submitting={complete.isPending}
         onSubmit={async (v: any) => {

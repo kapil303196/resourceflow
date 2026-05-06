@@ -63,26 +63,26 @@ export default function LicensesPage() {
   });
 
   const fields: FieldDef[] = [
-    { name: "licenseNumber", label: "License #", type: "text", required: true, span: 2 },
+    { name: "licenseNumber", label: t("field_licenseNumber"), type: "text", required: true, span: 2 },
     {
-      name: "locationId", label: "Source location", type: "select", required: true,
+      name: "locationId", label: t("field_sourceLocation"), type: "select", required: true,
       options: (locations.data?.items ?? [])
         .filter((l: any) => l.type === "SOURCE")
         .map((l: any) => ({ value: l._id, label: l.name })),
     },
-    { name: "issuingAuthority", label: "Issuing authority", type: "text" },
-    { name: "validFrom", label: "Valid from", type: "date", required: true },
-    { name: "validTo", label: "Valid to", type: "date", required: true },
-    { name: "permittedTonnage", label: "Permitted tonnage", type: "number", step: 0.01, required: true },
-    { name: "royaltyRatePerUnit", label: "Royalty rate/unit (major)", type: "money" },
-    { name: "renewalReminderDays", label: "Renewal reminder (days)", type: "number" },
+    { name: "issuingAuthority", label: t("field_issuingAuthority"), type: "text" },
+    { name: "validFrom", label: t("field_validFrom"), type: "date", required: true },
+    { name: "validTo", label: t("field_validTo"), type: "date", required: true },
+    { name: "permittedTonnage", label: t("field_permittedTonnage"), type: "number", step: 0.01, required: true },
+    { name: "royaltyRatePerUnit", label: t("field_royaltyRate"), type: "money" },
+    { name: "renewalReminderDays", label: t("field_renewalReminder"), type: "number" },
     { name: "status", label: "Status", type: "select", options: [
       { value: "ACTIVE", label: "Active" },
       { value: "SUSPENDED", label: "Suspended" },
       { value: "EXPIRED", label: "Expired" },
       { value: "RENEWED", label: "Renewed" },
     ] },
-    { name: "notes", label: "Notes", type: "textarea", span: 2 },
+    { name: "notes", label: t("notes"), type: "textarea", span: 2 },
   ];
 
   // Buckets for the summary cards

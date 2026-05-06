@@ -2,30 +2,35 @@
 import { useState } from "react";
 import { startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { trpc } from "@/lib/trpc";
-import { PageHeader } from "@/components/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable } from "@/components/data-table";
+import { useI18n } from "@/components/i18n-provider";
 
 export default function ReportsPage() {
+  const { t, fmtDate } = useI18n();
   const [from] = useState(startOfMonth(subMonths(new Date(), 2)));
   const [to] = useState(endOfMonth(new Date()));
   return (
-    <div className="p-6">
-      <PageHeader
-        title="Reports"
-        description={`Period: ${from.toLocaleDateString()} – ${to.toLocaleDateString()}`}
-      />
+    <div className="px-4 sm:px-6 py-5 max-w-[1400px] mx-auto">
+      <div className="mb-4">
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
+          {t("reports")}
+        </h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          {t("reports_period")}: {fmtDate(from)} – {fmtDate(to)}
+        </p>
+      </div>
       <Tabs defaultValue="tonnage">
-        <TabsList>
-          <TabsTrigger value="tonnage">Tonnage</TabsTrigger>
-          <TabsTrigger value="grades">Grades</TabsTrigger>
-          <TabsTrigger value="sales">Sales</TabsTrigger>
-          <TabsTrigger value="fleet">Fleet</TabsTrigger>
-          <TabsTrigger value="route">Route</TabsTrigger>
-          <TabsTrigger value="refinery">Refinery</TabsTrigger>
-          <TabsTrigger value="license">License util.</TabsTrigger>
-          <TabsTrigger value="valuation">Valuation</TabsTrigger>
-          <TabsTrigger value="contractor">Contractor</TabsTrigger>
+        <TabsList className="w-full overflow-x-auto justify-start sm:w-auto sm:justify-center scrollbar-thin">
+          <TabsTrigger value="tonnage">{t("reports_tonnage")}</TabsTrigger>
+          <TabsTrigger value="grades">{t("reports_grades")}</TabsTrigger>
+          <TabsTrigger value="sales">{t("reports_sales")}</TabsTrigger>
+          <TabsTrigger value="fleet">{t("reports_fleet")}</TabsTrigger>
+          <TabsTrigger value="route">{t("reports_route")}</TabsTrigger>
+          <TabsTrigger value="refinery">{t("reports_refinery")}</TabsTrigger>
+          <TabsTrigger value="license">{t("reports_license")}</TabsTrigger>
+          <TabsTrigger value="valuation">{t("reports_valuation")}</TabsTrigger>
+          <TabsTrigger value="contractor">{t("reports_contractor")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tonnage"><Tonnage from={from} to={to} /></TabsContent>

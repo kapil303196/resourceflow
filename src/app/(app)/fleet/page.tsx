@@ -12,18 +12,18 @@ import { StatusBadge } from "@/components/status-badge";
 import { useI18n } from "@/components/i18n-provider";
 
 const TYPES = [
-  { value: "TRUCK", label: "Truck" },
-  { value: "TRACTOR", label: "Tractor" },
-  { value: "MINI_TRUCK", label: "Mini truck" },
-  { value: "DUMPER", label: "Dumper" },
-  { value: "OTHER", label: "Other" },
+  { value: "TRUCK", labelKey: "type_truck" as const },
+  { value: "TRACTOR", labelKey: "type_tractor" as const },
+  { value: "MINI_TRUCK", labelKey: "type_miniTruck" as const },
+  { value: "DUMPER", labelKey: "type_dumper" as const },
+  { value: "OTHER", labelKey: "type_other" as const },
 ];
 const OWNERSHIP = [
-  { value: "OWNED", label: "Owned" },
-  { value: "LEASED", label: "Leased" },
-  { value: "CONTRACTED_TRIP", label: "Contracted (per trip)" },
-  { value: "CONTRACTED_DAILY", label: "Contracted (daily)" },
-  { value: "CONTRACTED_MONTHLY", label: "Contracted (monthly)" },
+  { value: "OWNED", labelKey: "own_owned" as const },
+  { value: "LEASED", labelKey: "own_leased" as const },
+  { value: "CONTRACTED_TRIP", labelKey: "own_contractedTrip" as const },
+  { value: "CONTRACTED_DAILY", labelKey: "own_contractedDaily" as const },
+  { value: "CONTRACTED_MONTHLY", labelKey: "own_contractedMonthly" as const },
 ];
 
 const schema = z.object({
@@ -100,16 +100,20 @@ export default function FleetPage() {
   });
 
   const fields: FieldDef[] = [
-    { name: "registrationNumber", label: "Registration #", type: "text", required: true, placeholder: "GJ-01-AA-1001", span: 2 },
-    { name: "vehicleType", label: "Type", type: "select", options: TYPES, required: true },
-    { name: "capacityTons", label: "Capacity (tons)", type: "number", step: 0.5 },
-    { name: "make", label: "Make", type: "text" },
-    { name: "model", label: "Model", type: "text" },
-    { name: "year", label: "Year", type: "number" },
-    { name: "ownershipType", label: "Ownership", type: "select", options: OWNERSHIP, required: true },
+    { name: "registrationNumber", label: t("field_registrationNumber"), type: "text", required: true, placeholder: "GJ-01-AA-1001", span: 2 },
+    { name: "vehicleType", label: t("type"), type: "select", required: true,
+      options: TYPES.map((x) => ({ value: x.value, label: t(x.labelKey) })),
+    },
+    { name: "capacityTons", label: t("field_capacity"), type: "number", step: 0.5 },
+    { name: "make", label: t("field_make"), type: "text" },
+    { name: "model", label: t("field_model"), type: "text" },
+    { name: "year", label: t("field_year"), type: "number" },
+    { name: "ownershipType", label: t("field_ownership"), type: "select", required: true,
+      options: OWNERSHIP.map((x) => ({ value: x.value, label: t(x.labelKey) })),
+    },
     {
       name: "contractorId",
-      label: "Contractor",
+      label: t("contractor"),
       type: "select",
       options: [
         { value: "", label: "— None —" },
@@ -118,14 +122,14 @@ export default function FleetPage() {
       showIf: (v) => v.ownershipType?.startsWith("CONTRACTED"),
       span: 2,
     },
-    { name: "ratePerTrip", label: "Rate / trip (major)", type: "money", showIf: (v) => v.ownershipType === "CONTRACTED_TRIP" },
-    { name: "ratePerTon", label: "Rate / ton (major)", type: "money", showIf: (v) => v.ownershipType?.startsWith("CONTRACTED") },
-    { name: "insuranceExpiryDate", label: "Insurance expiry", type: "date" },
-    { name: "fitnessExpiryDate", label: "Fitness expiry", type: "date" },
-    { name: "permitExpiryDate", label: "Permit expiry", type: "date" },
-    { name: "pucExpiryDate", label: "PUC expiry", type: "date" },
-    { name: "notes", label: "Notes", type: "textarea", span: 2 },
-    { name: "isActive", label: "Active", type: "boolean" },
+    { name: "ratePerTrip", label: t("field_ratePerTrip"), type: "money", showIf: (v) => v.ownershipType === "CONTRACTED_TRIP" },
+    { name: "ratePerTon", label: t("field_ratePerTon"), type: "money", showIf: (v) => v.ownershipType?.startsWith("CONTRACTED") },
+    { name: "insuranceExpiryDate", label: t("field_insuranceExpiry"), type: "date" },
+    { name: "fitnessExpiryDate", label: t("field_fitnessExpiry"), type: "date" },
+    { name: "permitExpiryDate", label: t("field_permitExpiry"), type: "date" },
+    { name: "pucExpiryDate", label: t("field_pucExpiry"), type: "date" },
+    { name: "notes", label: t("notes"), type: "textarea", span: 2 },
+    { name: "isActive", label: t("field_active"), type: "boolean" },
   ];
 
   async function submit(v: FormValues) {
@@ -163,8 +167,8 @@ export default function FleetPage() {
         onDelete={async (row) => del.mutateAsync({ id: String(row._id) })}
         columns={[
           { key: "registrationNumber", header: "Reg #", cell: (v: any) => <span className="font-mono font-medium">{v.registrationNumber}</span> },
-          { key: "vehicleType", header: t("type"), cell: (v: any) => <Badge variant="outline">{TYPES.find((x) => x.value === v.vehicleType)?.label ?? v.vehicleType}</Badge> },
-          { key: "ownershipType", header: "Ownership", cell: (v: any) => OWNERSHIP.find((x) => x.value === v.ownershipType)?.label ?? v.ownershipType },
+          { key: "vehicleType", header: t("type"), cell: (v: any) => <Badge variant="outline">{t(TYPES.find((x) => x.value === v.vehicleType)?.labelKey ?? "type_other")}</Badge> },
+          { key: "ownershipType", header: t("field_ownership"), cell: (v: any) => t(OWNERSHIP.find((x) => x.value === v.ownershipType)?.labelKey ?? "own_owned") },
           { key: "capacityTons", header: "Capacity", cell: (v: any) => `${v.capacityTons}t` },
           { key: "currentStatus", header: t("status"), cell: (v: any) => <StatusBadge status={v.currentStatus} /> },
           {
@@ -189,9 +193,9 @@ export default function FleetPage() {
                 <StatusBadge status={v.currentStatus} />
               </div>
               <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                <span>{TYPES.find((x) => x.value === v.vehicleType)?.label}</span>
+                <span>{t(TYPES.find((x) => x.value === v.vehicleType)?.labelKey ?? "type_other")}</span>
                 <span>·</span>
-                <span>{OWNERSHIP.find((x) => x.value === v.ownershipType)?.label}</span>
+                <span>{t(OWNERSHIP.find((x) => x.value === v.ownershipType)?.labelKey ?? "own_owned")}</span>
                 <span>·</span>
                 <span>{v.capacityTons}t</span>
               </div>

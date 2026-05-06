@@ -12,14 +12,14 @@ import { StatusBadge } from "@/components/status-badge";
 import { useI18n } from "@/components/i18n-provider";
 
 const EMP = [
-  { value: "PERMANENT", label: "Permanent" },
-  { value: "CONTRACT", label: "Contract" },
-  { value: "CONTRACTOR_SUPPLIED", label: "Contractor supplied" },
+  { value: "PERMANENT", labelKey: "emp_permanent" as const },
+  { value: "CONTRACT", labelKey: "emp_contract" as const },
+  { value: "CONTRACTOR_SUPPLIED", labelKey: "emp_contractorSupplied" as const },
 ];
 const SAL = [
-  { value: "MONTHLY", label: "Monthly" },
-  { value: "PER_TRIP", label: "Per trip" },
-  { value: "PER_TON", label: "Per ton" },
+  { value: "MONTHLY", labelKey: "sal_monthly" as const },
+  { value: "PER_TRIP", labelKey: "sal_perTrip" as const },
+  { value: "PER_TON", labelKey: "sal_perTon" as const },
 ];
 
 const schema = z.object({
@@ -101,14 +101,16 @@ export default function DriversPage() {
   });
 
   const fields: FieldDef[] = [
-    { name: "name", label: "Driver name", type: "text", required: true, span: 2 },
-    { name: "phone", label: "Phone", type: "tel" },
-    { name: "bloodGroup", label: "Blood group", type: "text", placeholder: "O+" },
-    { name: "address", label: "Address", type: "textarea", span: 2 },
-    { name: "aadhaarNumber", label: "Aadhaar #", type: "text" },
-    { name: "emergencyContactName", label: "Emergency contact", type: "text" },
-    { name: "emergencyContactPhone", label: "Emergency phone", type: "tel" },
-    { name: "employmentType", label: "Employment", type: "select", options: EMP, required: true },
+    { name: "name", label: t("name"), type: "text", required: true, span: 2 },
+    { name: "phone", label: t("phone"), type: "tel" },
+    { name: "bloodGroup", label: t("field_bloodGroup"), type: "text", placeholder: "O+" },
+    { name: "address", label: t("address"), type: "textarea", span: 2 },
+    { name: "aadhaarNumber", label: t("field_aadhaar"), type: "text" },
+    { name: "emergencyContactName", label: t("field_emergencyContact"), type: "text" },
+    { name: "emergencyContactPhone", label: t("field_emergencyPhone"), type: "tel" },
+    { name: "employmentType", label: t("field_employment"), type: "select", required: true,
+      options: EMP.map((e) => ({ value: e.value, label: t(e.labelKey) })),
+    },
     {
       name: "contractorId",
       label: "Contractor",
@@ -119,23 +121,25 @@ export default function DriversPage() {
       ],
       showIf: (v) => v.employmentType === "CONTRACTOR_SUPPLIED",
     },
-    { name: "licenseNumber", label: "License #", type: "text" },
-    { name: "licenseClass", label: "License class", type: "text" },
-    { name: "licenseExpiryDate", label: "License expiry", type: "date" },
+    { name: "licenseNumber", label: t("field_licenseNumber"), type: "text" },
+    { name: "licenseClass", label: t("field_licenseClass"), type: "text" },
+    { name: "licenseExpiryDate", label: t("field_licenseExpiry"), type: "date" },
     {
       name: "assignedVehicleId",
-      label: "Assigned vehicle",
+      label: t("field_assignedVehicle"),
       type: "select",
       options: [
         { value: "", label: "— None —" },
         ...((vehicles.data?.items ?? []).map((v: any) => ({ value: v._id, label: v.registrationNumber }))),
       ],
     },
-    { name: "salaryAmount", label: "Salary (major)", type: "money" },
-    { name: "salaryCycle", label: "Cycle", type: "select", options: SAL },
-    { name: "joiningDate", label: "Joining date", type: "date" },
-    { name: "notes", label: "Notes", type: "textarea", span: 2 },
-    { name: "isActive", label: "Active", type: "boolean" },
+    { name: "salaryAmount", label: t("field_salary"), type: "money" },
+    { name: "salaryCycle", label: t("field_salaryCycle"), type: "select",
+      options: SAL.map((s) => ({ value: s.value, label: t(s.labelKey) })),
+    },
+    { name: "joiningDate", label: t("field_joiningDate"), type: "date" },
+    { name: "notes", label: t("notes"), type: "textarea", span: 2 },
+    { name: "isActive", label: t("field_active"), type: "boolean" },
   ];
 
   async function submit(v: FormValues) {
@@ -162,7 +166,7 @@ export default function DriversPage() {
         onSearchChange={setSearch}
         filters={[
           { label: t("filterAll"), value: "all", active: filter === "all" },
-          ...EMP.map((e) => ({ label: e.label, value: e.value, active: filter === e.value })),
+          ...EMP.map((e) => ({ label: t(e.labelKey), value: e.value, active: filter === e.value })),
         ]}
         onFilterChange={setFilter}
         onCreate={() => { setEditing(null); setOpen(true); }}
@@ -171,9 +175,9 @@ export default function DriversPage() {
         columns={[
           { key: "name", header: t("name"), cell: (d: any) => <span className="font-medium">{d.name}</span> },
           { key: "phone", header: t("phone") },
-          { key: "employmentType", header: "Employment", cell: (d: any) => EMP.find((e) => e.value === d.employmentType)?.label ?? d.employmentType },
-          { key: "assignedVehicleId", header: "Vehicle", cell: (d: any) => d.assignedVehicleId?.registrationNumber ?? "—" },
-          { key: "licenseExpiryDate", header: "License", cell: (d: any) => d.licenseExpiryDate ? format(new Date(d.licenseExpiryDate), "PP") : "—" },
+          { key: "employmentType", header: t("field_employment"), cell: (d: any) => t(EMP.find((e) => e.value === d.employmentType)?.labelKey ?? "emp_permanent") },
+          { key: "assignedVehicleId", header: t("vehicle"), cell: (d: any) => d.assignedVehicleId?.registrationNumber ?? "—" },
+          { key: "licenseExpiryDate", header: t("license"), cell: (d: any) => d.licenseExpiryDate ? format(new Date(d.licenseExpiryDate), "PP") : "—" },
           { key: "currentStatus", header: t("status"), cell: (d: any) => <StatusBadge status={d.currentStatus} /> },
         ]}
         mobileCard={(d: any) => (
@@ -188,7 +192,7 @@ export default function DriversPage() {
             <div className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
               {d.phone && <span className="inline-flex items-center gap-1"><Phone className="size-3" />{d.phone}</span>}
               {d.assignedVehicleId?.registrationNumber && <span className="font-mono">{d.assignedVehicleId.registrationNumber}</span>}
-              <span>{EMP.find((e) => e.value === d.employmentType)?.label}</span>
+              <span>{t(EMP.find((e) => e.value === d.employmentType)?.labelKey ?? "emp_permanent")}</span>
             </div>
             {expiringSoon(d.licenseExpiryDate) && (
               <Badge variant="warning" className="mt-1.5">

@@ -161,14 +161,14 @@ export default function InvoicesPage() {
         }}
         fields={[
           {
-            name: "salesOrderId", label: "Source order", type: "select", required: true, span: 2,
+            name: "salesOrderId", label: t("field_sourceOrder"), type: "select", required: true, span: 2,
             options: (orders.data ?? []).map((o: any) => ({
               value: o._id,
               label: `${o.orderNumber} · ${o.customerId?.name ?? ""} · ${formatMoney(o.totalAmount ?? 0)}`,
             })),
           },
-          { name: "invoiceNumber", label: "Invoice #", type: "text", required: true, placeholder: "INV-2001" },
-          { name: "invoiceDate", label: "Invoice date", type: "date", required: true },
+          { name: "invoiceNumber", label: t("invoiceNumber"), type: "text", required: true, placeholder: "INV-2001" },
+          { name: "invoiceDate", label: t("field_invoiceDate"), type: "date", required: true },
         ]}
         submitting={createInv.isPending}
         onSubmit={async (v) => {
@@ -195,17 +195,17 @@ export default function InvoicesPage() {
           notes: "",
         }}
         fields={[
-          { name: "paymentDate", label: "Payment date", type: "date", required: true },
-          { name: "amount", label: "Amount (minor)", type: "number", required: true, hint: "Stored value (paise/cents)" },
-          { name: "method", label: "Method", type: "select", required: true, options: [
+          { name: "paymentDate", label: t("field_paymentDate"), type: "date", required: true },
+          { name: "amount", label: t("field_amount"), type: "number", required: true, hint: "Stored value (paise/cents)" },
+          { name: "method", label: t("field_method"), type: "select", required: true, options: [
             { value: "CASH", label: "Cash" },
             { value: "BANK_TRANSFER", label: "Bank transfer" },
             { value: "UPI", label: "UPI" },
             { value: "CHEQUE", label: "Cheque" },
             { value: "OTHER", label: "Other" },
           ] },
-          { name: "referenceNumber", label: "Reference #", type: "text" },
-          { name: "notes", label: "Notes", type: "textarea", span: 2 },
+          { name: "referenceNumber", label: t("field_referenceNumber"), type: "text" },
+          { name: "notes", label: t("notes"), type: "textarea", span: 2 },
         ]}
         submitting={recordPayment.isPending}
         onSubmit={async (v: PaymentForm) => {

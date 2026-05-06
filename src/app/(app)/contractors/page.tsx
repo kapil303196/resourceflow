@@ -11,11 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/components/i18n-provider";
 
 const TYPES = [
-  { value: "TRANSPORT", label: "Transport" },
-  { value: "EXTRACTION_LABOR", label: "Extraction labor" },
-  { value: "REFINERY_LABOR", label: "Refinery labor" },
-  { value: "EQUIPMENT_RENTAL", label: "Equipment rental" },
-  { value: "OTHER", label: "Other" },
+  { value: "TRANSPORT", labelKey: "ct_transport" as const },
+  { value: "EXTRACTION_LABOR", labelKey: "ct_extractionLabor" as const },
+  { value: "REFINERY_LABOR", labelKey: "ct_refineryLabor" as const },
+  { value: "EQUIPMENT_RENTAL", labelKey: "ct_equipmentRental" as const },
+  { value: "OTHER", labelKey: "type_other" as const },
 ];
 
 const schema = z.object({
@@ -34,21 +34,6 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
-
-const fields: FieldDef[] = [
-  { name: "name", label: "Contractor name", type: "text", required: true, span: 2 },
-  { name: "type", label: "Type", type: "select", options: TYPES, required: true },
-  { name: "contactName", label: "Contact person", type: "text" },
-  { name: "phone", label: "Phone", type: "tel" },
-  { name: "email", label: "Email", type: "email" },
-  { name: "address", label: "Address", type: "textarea", span: 2 },
-  { name: "gstin", label: "GSTIN", type: "text" },
-  { name: "agreementStartDate", label: "Agreement start", type: "date" },
-  { name: "agreementEndDate", label: "Agreement end", type: "date" },
-  { name: "agreementTerms", label: "Agreement terms", type: "textarea", span: 2 },
-  { name: "notes", label: "Notes", type: "textarea", span: 2 },
-  { name: "isActive", label: "Active", type: "boolean" },
-];
 
 const defaults: FormValues = {
   name: "",
@@ -90,6 +75,23 @@ export default function ContractorsPage() {
     onError: (e) => toast.error(e.message),
   });
 
+  const fields: FieldDef[] = [
+    { name: "name", label: t("name"), type: "text", required: true, span: 2 },
+    { name: "type", label: t("type"), type: "select", required: true,
+      options: TYPES.map((tp) => ({ value: tp.value, label: t(tp.labelKey) })),
+    },
+    { name: "contactName", label: t("field_contactPerson"), type: "text" },
+    { name: "phone", label: t("phone"), type: "tel" },
+    { name: "email", label: t("email"), type: "email" },
+    { name: "address", label: t("address"), type: "textarea", span: 2 },
+    { name: "gstin", label: t("field_gstin"), type: "text" },
+    { name: "agreementStartDate", label: t("field_agreementStart"), type: "date" },
+    { name: "agreementEndDate", label: t("field_agreementEnd"), type: "date" },
+    { name: "agreementTerms", label: t("field_agreementTerms"), type: "textarea", span: 2 },
+    { name: "notes", label: t("notes"), type: "textarea", span: 2 },
+    { name: "isActive", label: t("field_active"), type: "boolean" },
+  ];
+
   async function submit(v: FormValues) {
     const payload: any = { ...v };
     if (v.agreementStartDate) payload.agreementStartDate = new Date(v.agreementStartDate);
@@ -111,7 +113,7 @@ export default function ContractorsPage() {
         onSearchChange={setSearch}
         filters={[
           { label: t("filterAll"), value: "all", active: filter === "all" },
-          ...TYPES.map((tp) => ({ label: tp.label, value: tp.value, active: filter === tp.value })),
+          ...TYPES.map((tp) => ({ label: t(tp.labelKey), value: tp.value, active: filter === tp.value })),
         ]}
         onFilterChange={setFilter}
         onCreate={() => { setEditing(null); setOpen(true); }}
@@ -119,7 +121,7 @@ export default function ContractorsPage() {
         onDelete={async (row) => del.mutateAsync({ id: String(row._id) })}
         columns={[
           { key: "name", header: t("name"), cell: (c: any) => <span className="font-medium">{c.name}</span> },
-          { key: "type", header: t("type"), cell: (c: any) => <Badge variant="outline">{TYPES.find((x) => x.value === c.type)?.label ?? c.type}</Badge> },
+          { key: "type", header: t("type"), cell: (c: any) => <Badge variant="outline">{t(TYPES.find((x) => x.value === c.type)?.labelKey ?? "type_other")}</Badge> },
           { key: "phone", header: t("phone") },
           { key: "agreementEndDate", header: "Agreement ends", cell: (c: any) => c.agreementEndDate ? format(new Date(c.agreementEndDate), "PP") : "—" },
           { key: "isActive", header: t("status"), cell: (c: any) => <Badge variant={c.isActive ? "success" : "secondary"}>{c.isActive ? t("active") : t("inactive")}</Badge> },
@@ -128,7 +130,7 @@ export default function ContractorsPage() {
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-2">
               <span className="font-semibold">{c.name}</span>
-              <Badge variant="outline" className="shrink-0 text-[10px]">{TYPES.find((x) => x.value === c.type)?.label ?? c.type}</Badge>
+              <Badge variant="outline" className="shrink-0 text-[10px]">{t(TYPES.find((x) => x.value === c.type)?.labelKey ?? "type_other")}</Badge>
             </div>
             {c.contactName && <p className="text-xs text-muted-foreground">{c.contactName}</p>}
             <div className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">

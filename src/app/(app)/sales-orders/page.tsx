@@ -51,20 +51,20 @@ export default function SalesOrdersPage() {
   });
 
   const fields: FieldDef[] = [
-    { name: "orderNumber", label: "Order #", type: "text", required: true, placeholder: "SO-1001" },
+    { name: "orderNumber", label: t("orderNumber"), type: "text", required: true, placeholder: "SO-1001" },
     {
-      name: "customerId", label: "Customer", type: "select", required: true,
+      name: "customerId", label: t("customer"), type: "select", required: true,
       options: (customers.data?.items ?? []).map((c: any) => ({ value: c._id, label: c.name })),
     },
-    { name: "orderDate", label: "Order date", type: "date", required: true },
-    { name: "requiredByDate", label: "Required by", type: "date" },
+    { name: "orderDate", label: t("field_orderDate"), type: "date", required: true },
+    { name: "requiredByDate", label: t("field_requiredBy"), type: "date" },
     {
-      name: "materialGradeId", label: "Material grade", type: "select", required: true, span: 2,
+      name: "materialGradeId", label: t("field_materialGrade"), type: "select", required: true, span: 2,
       options: (grades.data?.items ?? []).map((g: any) => ({ value: g._id, label: g.name })),
     },
-    { name: "orderedTonnage", label: "Tonnage", type: "number", step: 0.01, required: true },
-    { name: "pricePerUnit", label: "Price/unit (major)", type: "money", required: true },
-    { name: "notes", label: "Notes", type: "textarea", span: 2 },
+    { name: "orderedTonnage", label: t("tonnage"), type: "number", step: 0.01, required: true },
+    { name: "pricePerUnit", label: t("field_pricePerUnit"), type: "money", required: true },
+    { name: "notes", label: t("notes"), type: "textarea", span: 2 },
   ];
 
   return (

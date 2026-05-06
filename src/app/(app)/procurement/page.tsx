@@ -49,19 +49,18 @@ type SupplierForm = z.infer<typeof supplierSchema>;
 const supplierDefaults: SupplierForm = {
   name: "", contactName: "", phone: "", email: "", address: "", gstin: "", notes: "", isActive: true,
 };
-const supplierFields: FieldDef[] = [
-  { name: "name", label: "Supplier name", type: "text", required: true, span: 2 },
-  { name: "contactName", label: "Contact person", type: "text" },
-  { name: "phone", label: "Phone", type: "tel" },
-  { name: "email", label: "Email", type: "email", span: 2 },
-  { name: "gstin", label: "GSTIN", type: "text" },
-  { name: "address", label: "Address", type: "textarea", span: 2 },
-  { name: "notes", label: "Notes", type: "textarea", span: 2 },
-  { name: "isActive", label: "Active", type: "boolean" },
-];
-
 function SuppliersInline() {
   const { t } = useI18n();
+  const supplierFields: FieldDef[] = [
+    { name: "name", label: t("name"), type: "text", required: true, span: 2 },
+    { name: "contactName", label: t("field_contactPerson"), type: "text" },
+    { name: "phone", label: t("phone"), type: "tel" },
+    { name: "email", label: t("email"), type: "email", span: 2 },
+    { name: "gstin", label: t("field_gstin"), type: "text" },
+    { name: "address", label: t("address"), type: "textarea", span: 2 },
+    { name: "notes", label: t("notes"), type: "textarea", span: 2 },
+    { name: "isActive", label: t("field_active"), type: "boolean" },
+  ];
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
@@ -177,20 +176,20 @@ function PurchaseOrdersInline() {
   });
 
   const fields: FieldDef[] = [
-    { name: "poNumber", label: "PO #", type: "text", required: true, placeholder: "PO-3001" },
+    { name: "poNumber", label: t("poNumber"), type: "text", required: true, placeholder: "PO-3001" },
     {
-      name: "supplierId", label: "Supplier", type: "select", required: true,
+      name: "supplierId", label: t("field_supplier"), type: "select", required: true,
       options: (suppliers.data?.items ?? []).map((s: any) => ({ value: s._id, label: s.name })),
     },
-    { name: "orderDate", label: "Order date", type: "date", required: true },
-    { name: "expectedDeliveryDate", label: "Expected delivery", type: "date" },
+    { name: "orderDate", label: t("field_orderDate"), type: "date", required: true },
+    { name: "expectedDeliveryDate", label: t("field_expectedDelivery"), type: "date" },
     {
-      name: "materialGradeId", label: "Material grade", type: "select", required: true, span: 2,
+      name: "materialGradeId", label: t("field_materialGrade"), type: "select", required: true, span: 2,
       options: (grades.data?.items ?? []).map((g: any) => ({ value: g._id, label: g.name })),
     },
-    { name: "tonnage", label: "Tonnage", type: "number", step: 0.01, required: true },
-    { name: "pricePerUnit", label: "Price/unit (major)", type: "money", required: true },
-    { name: "notes", label: "Notes", type: "textarea", span: 2 },
+    { name: "tonnage", label: t("tonnage"), type: "number", step: 0.01, required: true },
+    { name: "pricePerUnit", label: t("field_pricePerUnit"), type: "money", required: true },
+    { name: "notes", label: t("notes"), type: "textarea", span: 2 },
   ];
 
   return (

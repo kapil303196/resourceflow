@@ -49,26 +49,26 @@ export default function ExtractionPage() {
 
   const fields: FieldDef[] = [
     {
-      name: "licenseId", label: "License", type: "select", required: true, span: 2,
+      name: "licenseId", label: t("license"), type: "select", required: true, span: 2,
       options: (licenses.data ?? []).map((l: any) => ({
         value: l._id,
         label: `${l.licenseNumber} (${l.usedTonnage.toFixed(0)}/${l.permittedTonnage.toFixed(0)} used)`,
       })),
     },
     {
-      name: "locationId", label: "Location", type: "select", required: true,
+      name: "locationId", label: t("loc_warehouse"), type: "select", required: true,
       options: (locations.data?.items ?? []).filter((l: any) => l.type === "SOURCE").map((l: any) => ({ value: l._id, label: l.name })),
     },
-    { name: "extractedDate", label: "Extracted on", type: "date", required: true },
-    { name: "grossTonnage", label: "Gross tonnage", type: "number", step: 0.01, required: true, hint: "Will auto-decrement license usage" },
+    { name: "extractedDate", label: t("field_extractedDate"), type: "date", required: true },
+    { name: "grossTonnage", label: t("field_grossTonnage"), type: "number", step: 0.01, required: true, hint: "Will auto-decrement license usage" },
     {
-      name: "vehicleId", label: "Vehicle (optional)", type: "select",
+      name: "vehicleId", label: t("field_vehicleOptional"), type: "select",
       options: [
         { value: "", label: "— None —" },
         ...((vehicles.data?.items ?? []).map((v: any) => ({ value: v._id, label: v.registrationNumber }))),
       ],
     },
-    { name: "notes", label: "Notes", type: "textarea", span: 2 },
+    { name: "notes", label: t("notes"), type: "textarea", span: 2 },
   ];
 
   return (

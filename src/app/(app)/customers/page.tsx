@@ -25,19 +25,6 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const fields: FieldDef[] = [
-  { name: "name", label: "Customer name", type: "text", required: true, span: 2, placeholder: "BuildRight Construction" },
-  { name: "contactName", label: "Contact person", type: "text" },
-  { name: "phone", label: "Phone", type: "tel", placeholder: "+91…" },
-  { name: "email", label: "Email", type: "email", span: 2 },
-  { name: "address", label: "Address", type: "textarea", span: 2 },
-  { name: "gstin", label: "GSTIN", type: "text" },
-  { name: "creditLimit", label: "Credit limit (major units)", type: "money", hint: "Rupees / cents — stored as minor units" },
-  { name: "creditDays", label: "Credit days", type: "number", placeholder: "30" },
-  { name: "notes", label: "Notes", type: "textarea", span: 2 },
-  { name: "isActive", label: "Active", type: "boolean" },
-];
-
 const defaults: FormValues = {
   name: "",
   contactName: "",
@@ -83,6 +70,19 @@ export default function CustomersPage() {
     },
     onError: (e) => toast.error(e.message),
   });
+
+  const fields: FieldDef[] = [
+    { name: "name", label: t("name"), type: "text", required: true, span: 2, placeholder: "BuildRight Construction" },
+    { name: "contactName", label: t("field_contactPerson"), type: "text" },
+    { name: "phone", label: t("phone"), type: "tel", placeholder: "+91…" },
+    { name: "email", label: t("email"), type: "email", span: 2 },
+    { name: "address", label: t("address"), type: "textarea", span: 2 },
+    { name: "gstin", label: t("field_gstin"), type: "text" },
+    { name: "creditLimit", label: t("field_creditLimit"), type: "money", hint: t("helper_creditMajor") },
+    { name: "creditDays", label: t("field_creditDays"), type: "number", placeholder: "30" },
+    { name: "notes", label: t("notes"), type: "textarea", span: 2 },
+    { name: "isActive", label: t("field_active"), type: "boolean" },
+  ];
 
   function startCreate() {
     setEditing(null);
