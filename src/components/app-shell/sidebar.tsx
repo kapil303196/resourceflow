@@ -20,41 +20,26 @@ import {
   Settings,
   History,
   FileSpreadsheet,
+  Building2,
+  ChevronDown,
+  Wrench,
 } from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/components/i18n-provider";
 import type { DictKey, Locale } from "@/lib/i18n/dictionaries";
 
 /**
- * Sidebar grouping is ordered by how often a sand-mining owner needs each
- * module on a typical day. Daily-flow items live at the top; setup/rare
- * items (licenses, refinery processing, contractors, audit) are pushed
- * down so the active operating surface is one tap away.
+ * Sidebar collapses 16+ entities into 5 owner-centric sections, with the
+ * less-frequent destinations nested behind expandable groups. Top-level
+ * is what an owner taps every day; inner nodes are reference data.
  */
-type GroupKey = "today" | "sales" | "people" | "setup" | "system";
+type SectionKey = "today" | "sales" | "ops" | "people" | "more";
 
-const GROUP_LABELS: Record<Locale, Record<GroupKey, string>> = {
-  en: {
-    today: "Today",
-    sales: "Sales & customers",
-    people: "Fleet & people",
-    setup: "Setup",
-    system: "System",
-  },
-  hi: {
-    today: "आज",
-    sales: "बिक्री व ग्राहक",
-    people: "बेड़ा व लोग",
-    setup: "व्यवस्थापन",
-    system: "सिस्टम",
-  },
-  gu: {
-    today: "આજે",
-    sales: "વેચાણ અને ગ્રાહકો",
-    people: "કાફલો અને લોકો",
-    setup: "વ્યવસ્થા",
-    system: "સિસ્ટમ",
-  },
+const SECTION_LABELS: Record<Locale, Record<SectionKey, string>> = {
+  en: { today: "Today", sales: "Sales", ops: "Operations", people: "Fleet & people", more: "More" },
+  hi: { today: "आज", sales: "बिक्री", ops: "संचालन", people: "बेड़ा व लोग", more: "अधिक" },
+  gu: { today: "આજે", sales: "વેચાણ", ops: "કામગીરી", people: "કાફલો અને લોકો", more: "વધુ" },
 };
 
 export type NavItem = {
@@ -62,38 +47,40 @@ export type NavItem = {
   href: string;
   icon: any;
   perm?: string;
-  group: GroupKey;
 };
 
-export const NAV_ITEMS: NavItem[] = [
-  // 🏃 Daily — Dashboard + the actions an owner does multiple times a day
-  { labelKey: "dashboard", href: "/", icon: LayoutDashboard, group: "today" },
-  { labelKey: "trips", href: "/trips", icon: Map, perm: "trip.read", group: "today" },
-  { labelKey: "extraction", href: "/extraction", icon: Pickaxe, perm: "extraction.read", group: "today" },
-  { labelKey: "inventory", href: "/inventory", icon: Boxes, perm: "inventory.read", group: "today" },
-  { labelKey: "alerts", href: "/alerts", icon: Bell, group: "today" },
+const NAV: Record<SectionKey, NavItem[]> = {
+  today: [
+    { labelKey: "dashboard", href: "/", icon: LayoutDashboard },
+    { labelKey: "alerts", href: "/alerts", icon: Bell },
+  ],
+  sales: [
+    { labelKey: "salesOrders", href: "/sales-orders", icon: FileSpreadsheet, perm: "salesOrder.read" },
+    { labelKey: "invoices", href: "/invoices", icon: Receipt, perm: "invoice.read" },
+    { labelKey: "customers", href: "/customers", icon: Users, perm: "customer.read" },
+  ],
+  ops: [
+    { labelKey: "trips", href: "/trips", icon: Map, perm: "trip.read" },
+    { labelKey: "extraction", href: "/extraction", icon: Pickaxe, perm: "extraction.read" },
+    { labelKey: "inventory", href: "/inventory", icon: Boxes, perm: "inventory.read" },
+    { labelKey: "refineries", href: "/refineries", icon: Factory, perm: "refineryBatch.read" },
+    { labelKey: "licenses", href: "/licenses", icon: ScrollText, perm: "license.read" },
+  ],
+  people: [
+    { labelKey: "fleet", href: "/fleet", icon: Truck, perm: "vehicle.read" },
+    { labelKey: "drivers", href: "/drivers", icon: UserCircle2, perm: "driver.read" },
+    { labelKey: "contractors", href: "/contractors", icon: HardHat, perm: "contractor.read" },
+    { labelKey: "suppliers", href: "/procurement", icon: Building2, perm: "purchase.read" },
+  ],
+  more: [
+    { labelKey: "documents", href: "/documents", icon: FileText, perm: "document.read" },
+    { labelKey: "reports", href: "/reports", icon: BarChart3, perm: "report.read" },
+    { labelKey: "auditLog", href: "/audit", icon: History, perm: "auditLog.read" },
+    { labelKey: "settings", href: "/settings", icon: Settings },
+  ],
+};
 
-  // 💰 Sales — Order-to-cash; checked daily/weekly
-  { labelKey: "salesOrders", href: "/sales-orders", icon: FileSpreadsheet, perm: "salesOrder.read", group: "sales" },
-  { labelKey: "invoices", href: "/invoices", icon: Receipt, perm: "invoice.read", group: "sales" },
-  { labelKey: "customers", href: "/customers", icon: Users, perm: "customer.read", group: "sales" },
-
-  // 👥 Fleet & people — Used when changes happen, occasional reviews
-  { labelKey: "fleet", href: "/fleet", icon: Truck, perm: "vehicle.read", group: "people" },
-  { labelKey: "drivers", href: "/drivers", icon: UserCircle2, perm: "driver.read", group: "people" },
-  { labelKey: "contractors", href: "/contractors", icon: HardHat, perm: "contractor.read", group: "people" },
-
-  // 🛠️ Setup — Configured early, edited rarely
-  { labelKey: "refineries", href: "/refineries", icon: Factory, perm: "refineryBatch.read", group: "setup" },
-  { labelKey: "procurement", href: "/procurement", icon: ShoppingCart, perm: "purchase.read", group: "setup" },
-  { labelKey: "licenses", href: "/licenses", icon: ScrollText, perm: "license.read", group: "setup" },
-  { labelKey: "documents", href: "/documents", icon: FileText, perm: "document.read", group: "setup" },
-
-  // ⚙️ System — Reports & admin
-  { labelKey: "reports", href: "/reports", icon: BarChart3, perm: "report.read", group: "system" },
-  { labelKey: "auditLog", href: "/audit", icon: History, perm: "auditLog.read", group: "system" },
-  { labelKey: "settings", href: "/settings", icon: Settings, group: "system" },
-];
+const ORDER: SectionKey[] = ["today", "sales", "ops", "people", "more"];
 
 function hasPerm(permissions: string[], p?: string) {
   if (!p) return true;
@@ -109,54 +96,98 @@ export function SidebarNav({
 }) {
   const pathname = usePathname();
   const { t, locale } = useI18n();
-  const groupTranslations = GROUP_LABELS[locale] ?? GROUP_LABELS.en;
+  const labels = SECTION_LABELS[locale] ?? SECTION_LABELS.en;
 
-  const items = NAV_ITEMS.filter((n) => hasPerm(permissions, n.perm));
-  const groups = items.reduce<Record<GroupKey, NavItem[]>>((acc, n) => {
-    (acc[n.group] ??= []).push(n);
-    return acc;
-  }, {} as any);
+  // Auto-expand the section containing the active route on first paint.
+  const findActiveSection = (): SectionKey =>
+    (ORDER.find((s) =>
+      NAV[s].some((n) =>
+        n.href === "/" ? pathname === "/" : pathname.startsWith(n.href),
+      ),
+    ) ?? "today");
 
-  // Preserve the order: today → sales → people → setup → system
-  const ORDER: GroupKey[] = ["today", "sales", "people", "setup", "system"];
+  const [open, setOpen] = useState<SectionKey>(findActiveSection());
 
   return (
-    <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5 scrollbar-thin">
-      {ORDER.filter((g) => groups[g]?.length).map((group) => (
-        <div key={group}>
-          <div className="px-2 mb-1.5 text-[10px] uppercase tracking-wider font-semibold text-sidebar-foreground/60">
-            {groupTranslations[group]}
-          </div>
-          <div className="space-y-0.5">
-            {groups[group].map((n) => {
-              const active =
-                n.href === "/" ? pathname === "/" : pathname.startsWith(n.href);
-              const Icon = n.icon;
-              return (
-                <Link
-                  key={n.href}
-                  href={n.href}
-                  onClick={onNavigate}
-                  className={cn(
-                    "group flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-all",
-                    active
-                      ? "bg-sidebar-active/20 text-white shadow-[inset_2px_0_0_0_hsl(var(--sidebar-active))]"
-                      : "text-sidebar-foreground hover:bg-sidebar-muted hover:text-white",
-                  )}
-                >
-                  <Icon
+    <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1 scrollbar-thin">
+      {ORDER.map((section) => {
+        const items = NAV[section].filter((n) => hasPerm(permissions, n.perm));
+        if (!items.length) return null;
+        const isOpen = open === section;
+        const isActive = items.some((n) =>
+          n.href === "/" ? pathname === "/" : pathname.startsWith(n.href),
+        );
+        // "Today" stays always-flat; rest are collapsible accordion-style
+        if (section === "today") {
+          return (
+            <div key={section} className="space-y-0.5">
+              {items.map((n) => {
+                const active = n.href === "/" ? pathname === "/" : pathname.startsWith(n.href);
+                const Icon = n.icon;
+                return (
+                  <Link
+                    key={n.href}
+                    href={n.href}
+                    onClick={onNavigate}
                     className={cn(
-                      "size-[18px] shrink-0 transition-colors",
-                      active ? "text-sidebar-active" : "text-sidebar-foreground/70 group-hover:text-white",
+                      "group flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-all",
+                      active
+                        ? "bg-sidebar-active/20 text-white shadow-[inset_2px_0_0_0_hsl(var(--sidebar-active))]"
+                        : "text-sidebar-foreground hover:bg-sidebar-muted hover:text-white",
                     )}
-                  />
-                  <span className="truncate">{t(n.labelKey)}</span>
-                </Link>
-              );
-            })}
+                  >
+                    <Icon className={cn("size-[18px] shrink-0", active ? "text-sidebar-active" : "text-sidebar-foreground/70 group-hover:text-white")} />
+                    <span className="truncate">{t(n.labelKey)}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          );
+        }
+        return (
+          <div key={section} className="pt-1">
+            <button
+              onClick={() => setOpen(isOpen ? "today" : section)}
+              className={cn(
+                "w-full flex items-center justify-between rounded-lg px-2.5 py-2 text-[11px] uppercase tracking-wider font-semibold transition-colors",
+                isActive ? "text-white" : "text-sidebar-foreground/70 hover:text-white",
+              )}
+            >
+              <span>{labels[section]}</span>
+              <ChevronDown
+                className={cn(
+                  "size-3.5 transition-transform",
+                  isOpen ? "rotate-0" : "-rotate-90",
+                )}
+              />
+            </button>
+            {isOpen && (
+              <div className="space-y-0.5 mt-0.5">
+                {items.map((n) => {
+                  const active = n.href === "/" ? pathname === "/" : pathname.startsWith(n.href);
+                  const Icon = n.icon;
+                  return (
+                    <Link
+                      key={n.href}
+                      href={n.href}
+                      onClick={onNavigate}
+                      className={cn(
+                        "group flex items-center gap-3 rounded-lg pl-3.5 pr-2.5 py-1.5 text-sm transition-all",
+                        active
+                          ? "bg-sidebar-active/20 text-white shadow-[inset_2px_0_0_0_hsl(var(--sidebar-active))]"
+                          : "text-sidebar-foreground hover:bg-sidebar-muted hover:text-white",
+                      )}
+                    >
+                      <Icon className={cn("size-[16px] shrink-0", active ? "text-sidebar-active" : "text-sidebar-foreground/60 group-hover:text-white")} />
+                      <span className="truncate">{t(n.labelKey)}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </nav>
   );
 }
