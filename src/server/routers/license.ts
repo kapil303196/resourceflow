@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { router, requirePermission } from "../trpc";
 import { License, LicenseConditionLog, ExtractionBatch } from "@/models";
 import { recordAudit } from "../audit";
+import { tenantStamp } from "../tenant-stamp";
 
 const createInput = z.object({
   locationId: z.string(),
@@ -73,7 +74,7 @@ export const licenseRouter = router({
           message: "validTo must be after validFrom",
         });
       }
-      const doc = await License.create(input);
+      const doc = await License.create({ ...input, ...tenantStamp() });
       await recordAudit({
         action: "license.create",
         entityType: "License",
@@ -157,6 +158,7 @@ export const licenseRouter = router({
     .mutation(async ({ input, ctx }) => {
       const log = await LicenseConditionLog.create({
         ...input,
+        ...tenantStamp(),
         recordedByUserId: ctx.user.id,
       });
       return { id: String(log._id) };

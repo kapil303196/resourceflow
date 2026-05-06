@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { router, mergeRouters, requirePermission } from "../trpc";
+import { tenantStamp } from "../tenant-stamp";
 import { buildCrudRouter } from "../crud-helper";
 import {
   Driver,
@@ -192,6 +193,7 @@ const extras = router({
     .mutation(async ({ input, ctx }) => {
       const inc = await DriverIncident.create({
         ...input,
+        ...tenantStamp(),
         recordedByUserId: ctx.user.id,
       });
       return { id: String(inc._id) };

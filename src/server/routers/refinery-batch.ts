@@ -9,6 +9,7 @@ import {
   InventoryLedger,
 } from "@/models";
 import { recordAudit } from "../audit";
+import { tenantStamp } from "../tenant-stamp";
 import { connectMongo, mongoose } from "@/lib/mongo";
 
 const outputSchema = z.object({
@@ -142,6 +143,7 @@ export const refineryBatchRouter = router({
       }
       const batch = await RefineryBatch.create({
         ...input,
+        ...tenantStamp(),
         operatorUserId: input.operatorUserId ?? ctx.user.id,
         status: "IN_PROGRESS",
       });

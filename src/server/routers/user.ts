@@ -8,6 +8,7 @@ import {
 } from "../trpc";
 import { User, Role } from "@/models";
 import { recordAudit } from "../audit";
+import { tenantStamp } from "../tenant-stamp";
 
 export const userRouter = router({
   me: protectedProcedure.query(({ ctx }) => ctx.user),
@@ -71,6 +72,7 @@ export const userRouter = router({
       if (!role) throw new TRPCError({ code: "BAD_REQUEST", message: "Role not found" });
       const passwordHash = await bcrypt.hash(input.password, 12);
       const user = await User.create({
+        ...tenantStamp(),
         name: input.name,
         email: input.email.toLowerCase(),
         passwordHash,

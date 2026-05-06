@@ -5,6 +5,7 @@ import { router, mergeRouters, requirePermission } from "../trpc";
 import { buildCrudRouter } from "../crud-helper";
 import { Contractor, ContractorPayment, Trip, Vehicle } from "@/models";
 import { recordAudit } from "../audit";
+import { tenantStamp } from "../tenant-stamp";
 
 const createSchema = z.object({
   name: z.string().min(1),
@@ -118,6 +119,7 @@ const extras = router({
       if (!existing) {
         // Create with computed totals
         await ContractorPayment.create({
+          ...tenantStamp(),
           contractorId: input.contractorId,
           period: input.period,
           paidAmount: input.amount,

@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { router, requirePermission } from "../trpc";
 import { SalesOrder, MaterialGrade, InventoryLedger } from "@/models";
 import { recordAudit } from "../audit";
+import { tenantStamp } from "../tenant-stamp";
 import { nextNumber } from "../next-number";
 
 const itemSchema = z.object({
@@ -93,6 +94,7 @@ export const salesOrderRouter = router({
       const orderNumber = input.orderNumber || (await nextNumber("SO"));
       const o = await SalesOrder.create({
         ...input,
+        ...tenantStamp(),
         orderNumber,
         totalAmount: totalFor(input.items),
         status: "DRAFT",

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Types } from "mongoose";
+import { tenantStamp } from "../tenant-stamp";
 import { router, mergeRouters, requirePermission } from "../trpc";
 import { buildCrudRouter } from "../crud-helper";
 import { Vehicle, VehicleMaintenance, Trip } from "@/models";
@@ -107,6 +108,7 @@ const extras = router({
     .mutation(async ({ input, ctx }) => {
       const m = await VehicleMaintenance.create({
         ...input,
+        ...tenantStamp(),
         recordedByUserId: ctx.user.id,
       });
       return { id: String(m._id) };

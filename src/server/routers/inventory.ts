@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { router, requirePermission } from "../trpc";
 import { InventoryLedger } from "@/models";
 import { recordAudit } from "../audit";
+import { tenantStamp } from "../tenant-stamp";
 import { connectMongo, mongoose } from "@/lib/mongo";
 import { tenantContext } from "@/lib/tenant-context";
 
@@ -168,6 +169,7 @@ export const inventoryRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const entry = await InventoryLedger.create({
+        ...tenantStamp(),
         materialGradeId: input.materialGradeId,
         locationId: input.locationId,
         transactionType: "ADJUSTMENT",
@@ -272,6 +274,7 @@ export const inventoryRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const entry = await InventoryLedger.create({
+        ...tenantStamp(),
         materialGradeId: input.materialGradeId,
         locationId: input.locationId,
         transactionType: "OPENING",

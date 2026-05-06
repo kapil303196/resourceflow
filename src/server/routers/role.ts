@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, requirePermission } from "../trpc";
+import { tenantStamp } from "../tenant-stamp";
 import { Role, User } from "@/models";
 import { ALL_PERMISSIONS } from "@/lib/permissions";
 
@@ -21,6 +22,7 @@ export const roleRouter = router({
     )
     .mutation(async ({ input }) => {
       const role = await Role.create({
+        ...tenantStamp(),
         name: input.name,
         description: input.description ?? "",
         permissions: input.permissions,

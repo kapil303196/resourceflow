@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { router, requirePermission } from "../trpc";
 import { Invoice, Payment, SalesOrder, Customer, Tenant } from "@/models";
 import { recordAudit } from "../audit";
+import { tenantStamp } from "../tenant-stamp";
 import { nextNumber } from "../next-number";
 import { addDays } from "date-fns";
 import {
@@ -82,6 +83,7 @@ export const invoiceRouter = router({
       const dueDate = addDays(invoiceDate, customer.creditDays ?? 30);
       const invoiceNumber = input.invoiceNumber || (await nextNumber("INVOICE"));
       const inv = await Invoice.create({
+        ...tenantStamp(),
         salesOrderId: input.salesOrderId,
         customerId: order.customerId,
         invoiceNumber,
@@ -133,6 +135,7 @@ export const invoiceRouter = router({
         });
       }
       const payment = await Payment.create({
+        ...tenantStamp(),
         invoiceId: input.invoiceId,
         paymentDate: input.paymentDate,
         amount: input.amount,

@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { router, requirePermission } from "../trpc";
 import { PurchaseOrder, PurchaseDelivery, InventoryLedger } from "@/models";
 import { recordAudit } from "../audit";
+import { tenantStamp } from "../tenant-stamp";
 import { nextNumber } from "../next-number";
 import { connectMongo, mongoose } from "@/lib/mongo";
 
@@ -99,6 +100,7 @@ export const purchaseOrderRouter = router({
       const poNumber = input.poNumber || (await nextNumber("PO"));
       const po = await PurchaseOrder.create({
         ...input,
+        ...tenantStamp(),
         poNumber,
         totalAmount: computeTotal(input.items),
         status: "DRAFT",

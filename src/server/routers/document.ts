@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, requirePermission, protectedProcedure } from "../trpc";
+import { tenantStamp } from "../tenant-stamp";
 import { Document_, DOCUMENT_ENTITY_TYPES } from "@/models/document";
 import {
   buildS3Key,
@@ -76,6 +77,7 @@ export const documentRouter = router({
       }
       const doc = await Document_.create({
         ...input,
+        ...tenantStamp(),
         uploadedByUserId: ctx.user.id,
       });
       return { id: String(doc._id) };

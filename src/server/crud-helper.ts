@@ -3,6 +3,7 @@ import { z, ZodTypeAny } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, requirePermission } from "./trpc";
 import { recordAudit } from "./audit";
+import { tenantStamp } from "./tenant-stamp";
 import type { Permission } from "@/lib/permissions";
 
 export type CrudOptions<TCreate extends ZodTypeAny, TUpdate extends ZodTypeAny> = {
@@ -81,7 +82,10 @@ export function buildCrudRouter<C extends ZodTypeAny, U extends ZodTypeAny>(
     create: requirePermission(createPerm)
       .input(opts.createSchema as any)
       .mutation(async ({ input, ctx }) => {
-        const doc = await opts.model.create(input as any);
+        const doc = await opts.model.create({
+          ...(input as any),
+          ...tenantStamp(),
+        });
         await recordAudit({
           action: `${opts.module}.create`,
           entityType: opts.entityType,
@@ -100,7 +104,7 @@ export function buildCrudRouter<C extends ZodTypeAny, U extends ZodTypeAny>(
         const before = await opts.model.findById(id).lean();
         if (!before) throw new TRPCError({ code: "NOT_FOUND" });
         const after = await opts.model
-          .findByIdAndUpdate(id, { $set: rest }, { new: true })
+          .findByIdAndUpdate(id, { $set: { ...rest, updatedBy: ctx.user.id } }, { new: true })
           .lean();
         await recordAudit({
           action: `${opts.module}.update`,

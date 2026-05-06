@@ -14,6 +14,7 @@ import {
 } from "@/models";
 import { recordAudit } from "../audit";
 import { nextNumber } from "../next-number";
+import { tenantStamp } from "../tenant-stamp";
 import { connectMongo, mongoose } from "@/lib/mongo";
 import {
   buildS3Key,
@@ -154,6 +155,7 @@ export const tripRouter = router({
       const tripNumber = input.tripNumber || (await nextNumber("TRIP"));
       const trip = await Trip.create({
         ...input,
+        ...tenantStamp(),
         tripNumber,
         vehicleOwnershipSnapshot: ownershipSnapshot,
         contractorId: vehicle.contractorId,
@@ -410,6 +412,7 @@ export const tripRouter = router({
       const netTonnage = Math.max(0, input.weightOut - input.weightIn);
       const slipNumber = input.slipNumber || (await nextNumber("SLIP"));
       const slip = await LoadingSlip.create({
+        ...tenantStamp(),
         tripId: input.tripId,
         slipNumber,
         issuedAt: new Date(),
